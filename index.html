@@ -47,6 +47,20 @@ body{font-family:var(--sans);font-weight:300;color:var(--ink);-webkit-font-smoot
 #setup label{display:block;text-align:left;font-size:12.5px;color:var(--ink3);margin:14px 0 6px}
 #setup input,#setup select{width:100%;padding:12px 14px;border-radius:12px;border:0.5px solid var(--line);background:rgba(0,0,0,.22);color:var(--ink);font-family:var(--sans);font-size:14px;outline:none}
 #setup input:focus,#setup select:focus{border-color:var(--door)}
+#settings .box{margin:7vh auto;max-width:560px;background:var(--panel);border:0.5px solid var(--line);border-radius:22px;padding:30px 30px;text-align:left}
+#settings .set-top{display:flex;align-items:center;justify-content:space-between}
+#settings h2{font-family:var(--serif);font-weight:400;font-size:23px;margin:0}
+#settings .ghost{padding:7px 15px;font-size:13px}
+#settings .set-lead{font-size:13px;color:var(--ink3);line-height:1.7;margin-top:8px}
+#settings label{display:block;text-align:left;font-size:12.5px;color:var(--ink3);margin:14px 0 6px}
+#settings input,#settings select,#settings textarea{width:100%;padding:11px 14px;border-radius:12px;border:0.5px solid var(--line);background:rgba(0,0,0,.22);color:var(--ink);font-family:var(--sans);font-size:14px;outline:none;box-sizing:border-box}
+#settings input:focus,#settings select:focus,#settings textarea:focus{border-color:var(--door)}
+#settings .set-sec{border-top:0.5px solid var(--line);margin-top:24px;padding-top:20px}
+#settings .set-h{font-family:var(--serif);font-size:16.5px;color:var(--ink);margin-bottom:5px}
+#settings .set-d{font-size:12.5px;color:var(--ink3);line-height:1.75}
+#settings .set-row{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:12px}
+#settings .set-row select{flex:1;min-width:120px}
+#settings .linkbtn{background:none;border:none;color:var(--door);cursor:pointer;font-size:12px;text-decoration:underline;padding:0;font-family:var(--sans)}
 .btn{font-family:var(--serif);font-size:16px;color:#1b1540;background:var(--door);border:none;border-radius:40px;padding:13px 30px;cursor:pointer;transition:.3s;margin-top:22px}
 .btn:hover{box-shadow:0 0 34px var(--glow)}
 .note{font-size:12px;color:var(--ink3);line-height:1.7;margin-top:16px;text-align:left}
@@ -211,7 +225,7 @@ b{font-weight:500}
     <div class="hd" id="foyerHd">走完显影之后，这扇门会轻轻亮起——<br>门后，是群星在聊今天的你。</div>
     <div style="margin-top:24px"><label id="impLabel" style="font-size:13px;color:var(--ink3);cursor:pointer;border-bottom:0.5px solid var(--line);padding-bottom:2px">已经聊过了？导入内核（siry-kernel.txt），直接推门看群星 →</label><input id="impf" type="file" style="display:none"></div>
   </div>
-  <div style="text-align:center;padding-bottom:6vh"><button type="button" class="ghost" style="padding:7px 16px;font-size:12.5px" onclick="show('settings')">⚙ 设置</button></div>
+  <div style="text-align:center;padding-bottom:6vh"><button type="button" class="ghost" style="padding:7px 16px;font-size:12.5px" onclick="openSettings()">⚙ 设置</button></div>
 </div></div>
 
 <div class="scrn" id="setup"><div class="wrap"><div class="box">
@@ -276,46 +290,72 @@ b{font-weight:500}
   <div class="note">· key 只存本机浏览器，仅用于直接调用你选的服务。<br>· 对话直连服务商，不经第三方、邀请你的人也看不到。</div>
 </div></div></div>
 
-<div class="scrn" id="settings"><div class="wrap"><div class="box" style="max-width:560px">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-    <h2 class="serif" style="margin:0">设置 · 进阶</h2>
-    <button class="ghost" style="padding:7px 14px" onclick="show('home')">← 回门厅</button>
+<div class="scrn" id="settings"><div class="wrap"><div class="box">
+  <div class="set-top">
+    <h2 class="serif">设置</h2>
+    <button class="ghost" onclick="show('home')">← 返回</button>
   </div>
-  <div class="note" style="margin-bottom:8px">下面这些都是<b>可选</b>的，不设也能用。每日显影、自动冲洗、投递需要「Claude 订阅」接法。</div>
-  <div class="note" style="margin-top:22px;border-top:0.5px solid var(--line);padding-top:16px">📓 <b>每日显影</b>（日课）——按你的品味每天挑几条资讯、写成日报。<b>需选用「Claude 订阅」provider</b>；其它 provider 下暂不可用。</div>
-  <label>日课工作区（Soul-pack 与日报所在目录；留空用默认）</label>
-  <input id="agws" type="text" placeholder="/Users/你/项目/SIRY_AI/siry_ai" autocomplete="off">
-  <label>行为记录（只存本机 · 可看可删）</label>
-  <select id="agconsent">
-    <option value="on">开（推荐）——用点开/划走帮品味进化</option>
-    <option value="off">关——日课只推不学</option>
-    <option value="granular">细粒度——开，但按主题留白</option>
-  </select>
-  <div id="agAvoidBox" style="display:none">
-    <label>别学我这个（每行一个主题，编进 SOUL 禁区）</label>
-    <textarea id="agavoid" rows="2" style="width:100%;padding:10px 14px;border-radius:12px;border:0.5px solid var(--line);background:rgba(0,0,0,.22);color:var(--ink);font-family:var(--sans);font-size:13px"></textarea>
+  <div class="set-lead">下面都是可选的，一样都不设，SIRY 也能正常陪你聊、帮你显影。</div>
+
+  <div class="set-sec">
+    <div class="set-h">AI 连接方式</div>
+    <div class="set-d">你现在用的是 <b id="curProvider">—</b>。想换一种、或钥匙填错了都能改。</div>
+    <div class="set-row"><button type="button" class="ghost" onclick="show('setup')">换一种连接方式</button></div>
   </div>
-  <div class="note">· 信号永不出本机。<button type="button" id="agwipe" style="background:none;border:none;color:var(--door);cursor:pointer;font-size:12px;text-decoration:underline">删除原始信号记录</button> · <button type="button" id="agwipeAll" style="background:none;border:none;color:var(--door);cursor:pointer;font-size:12px;text-decoration:underline">把道场也一并抹去（地图·舍利子·碰撞史）</button></div>
-  <label>每日自动显影（后台定点冲洗，不用开 app）</label>
-  <div style="display:flex;gap:10px;align-items:center">
-    <select id="dmHour" style="flex:1"></select>
-    <button type="button" id="dmToggle" class="ghost" style="padding:9px 18px">…</button>
-    <button type="button" id="dmRunNow" class="ghost" style="padding:9px 18px">现在冲洗</button>
+
+  <div id="agencyWebNote" class="set-sec" style="display:none">
+    <div class="set-h">每天帮你读资讯、写日报</div>
+    <div class="set-d">这类「你不在，它也替你做」的功能，需要 <b>Mac 桌面版 + 你自己的 Claude 订阅</b> 才能跑。网页版先陪你聊、把你的品味显影出来——想要每天的自动日报，装上桌面版就有了。</div>
   </div>
-  <div class="note" id="dmNote">开启后 macOS 会在「登录项与扩展」里提示 SIRY 的后台项——那就是它。随时可关，关了就只在你打开 app 时冲洗。</div>
-  <label>把日报投到你在的地方（只投不采：点开/划走仍只在 app 里记）</label>
-  <select id="dvPreset">
-    <option value="">不投递</option>
-    <option value="wecom">企业微信群机器人</option>
-    <option value="feishu">飞书自定义机器人</option>
-    <option value="serverchan">Server酱（进个人微信）</option>
-    <option value="bark">Bark（iPhone 推送）</option>
-    <option value="custom">自定义 webhook</option>
-  </select>
-  <input id="dvEndpoint" type="text" placeholder="粘贴 webhook 地址" style="display:none" autocomplete="off">
-  <textarea id="dvTemplate" rows="2" placeholder='自定义模板，可用 {{date}} {{title}} {{text}}；若端点要 JSON，请自己给占位加引号（原样发送，不代验证）' style="display:none;width:100%;padding:10px 14px;border-radius:12px;border:0.5px solid var(--line);background:rgba(0,0,0,.22);color:var(--ink);font-family:var(--sans);font-size:13px"></textarea>
-  <div class="note" id="dvPrivacy" style="display:none"></div>
-  <div style="display:flex;gap:10px"><button type="button" id="dvSave" class="ghost" style="padding:9px 18px">保存投递</button><button type="button" id="dvTest" class="ghost" style="padding:9px 18px">测试投递</button></div>
+
+  <div id="agencyBox">
+    <div class="set-sec">
+      <div class="set-h">每天帮你读资讯、写日报</div>
+      <div class="set-d">SIRY 顺着你的品味，每天自动挑几条值得看的，写成一小段日报。</div>
+      <label>日报存在哪个文件夹</label>
+      <input id="agws" type="text" placeholder="留空就用默认位置" autocomplete="off">
+      <label>要不要边用边学你的口味</label>
+      <select id="agconsent">
+        <option value="on">学（推荐）—— 你点开、划走这些动作，帮 SIRY 更懂你</option>
+        <option value="off">不学 —— 只把内容推给你看，不记你的动作</option>
+        <option value="granular">学，但有些话题不碰（在下面写出来）</option>
+      </select>
+      <div id="agAvoidBox" style="display:none">
+        <label>这些话题别拿来学我（一行写一个）</label>
+        <textarea id="agavoid" rows="2"></textarea>
+      </div>
+      <div class="note">这些记录从不离开这台电脑。<button type="button" id="agwipe" class="linkbtn">删掉学习记录</button> · <button type="button" id="agwipeAll" class="linkbtn">连道场一起清空（灵魂地图 · 舍利子 · 碰撞史）</button></div>
+    </div>
+
+    <div class="set-sec">
+      <div class="set-h">每天定点，自己在后台跑</div>
+      <div class="set-d">不用一直开着 app，到点它自己冲洗一次日报。</div>
+      <div class="set-row">
+        <select id="dmHour" style="flex:1"></select>
+        <button type="button" id="dmToggle" class="ghost">…</button>
+        <button type="button" id="dmRunNow" class="ghost">现在就跑一次</button>
+      </div>
+      <div class="note" id="dmNote">开启后，macOS 会在「登录项与扩展」里列出 SIRY 的后台项——那就是它，随时能关。关掉后，只在你打开 app 时才冲洗。</div>
+    </div>
+
+    <div class="set-sec">
+      <div class="set-h">把日报送到你常看的地方</div>
+      <div class="set-d">日报写好后自动发过去。只是发出去；你在那边点没点、看没看，SIRY 都不会记。</div>
+      <label>发到哪里</label>
+      <select id="dvPreset">
+        <option value="">先不发</option>
+        <option value="wecom">企业微信 · 群机器人</option>
+        <option value="feishu">飞书 · 自定义机器人</option>
+        <option value="serverchan">Server酱 · 推到你的微信</option>
+        <option value="bark">Bark · iPhone 推送</option>
+        <option value="custom">自定义地址（webhook）</option>
+      </select>
+      <input id="dvEndpoint" type="text" placeholder="把接收地址粘到这里" style="display:none" autocomplete="off">
+      <textarea id="dvTemplate" rows="2" placeholder='想自己排版就填，可用 {{date}} {{title}} {{text}}；若对方要 JSON，占位符请自己加引号（原样发送，不代验证）' style="display:none"></textarea>
+      <div class="note" id="dvPrivacy" style="display:none"></div>
+      <div class="set-row"><button type="button" id="dvSave" class="ghost">保存</button><button type="button" id="dvTest" class="ghost">发一条测试看看</button></div>
+    </div>
+  </div>
 </div></div></div>
 
 <div class="scrn" id="about"><div class="wrap"><div class="box" style="max-width:560px">
@@ -759,6 +799,15 @@ function toast(msg, ms=4200){
 }
 
 function show(id){document.querySelectorAll('.scrn').forEach(s=>s.classList.remove('on'));$(id).classList.add('on');window.scrollTo(0,0);}
+function openSettings(){
+  const L={sdk:'我的 Claude 账号（订阅）',openrouter:'OpenRouter 钥匙',anthropic:'Anthropic 钥匙',cli:'本机 Claude CLI'};
+  const p=localStorage.getItem('siry_provider')||($('provider')&&$('provider').value)||PROVIDER;
+  const cp=$('curProvider');if(cp)cp.textContent=L[p]||'—';
+  const box=$('agencyBox'),note=$('agencyWebNote');
+  if(box)box.style.display=TAURI?'block':'none';
+  if(note)note.style.display=TAURI?'none':'block';
+  show('settings');
+}
 function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
 function fig(sz){const c='#ffd9a0',g='#fff0d4';
   return '<svg viewBox="0 0 64 84" width="'+sz+'" height="'+(sz*1.31)+'" aria-hidden="true" style="filter:drop-shadow(0 0 5px '+c+'88)"><ellipse cx="32" cy="78" rx="16" ry="3" fill="rgba(0,0,0,.2)"/><path d="M32 26 L46 70 Q32 74 18 70 Z" fill="'+c+'"/><path d="M32 26 L25 70 Q21.5 71 18 70 Z" fill="rgba(255,255,255,.2)"/><circle cx="32" cy="18" r="8.5" fill="'+c+'"/><circle cx="32" cy="7.3" r="2.3" fill="'+g+'"/></svg>';}
@@ -943,10 +992,10 @@ for(let h=0;h<24;h++){const o=document.createElement('option');o.value=h;o.textC
 async function refreshDaemonUI(){try{const st=await inv('daemon_status');$('dmHour').value=st.hour;$('dmToggle').textContent=st.installed?'已开启 · 点击关闭':'已关闭 · 点击开启';$('dmToggle').dataset.on=st.installed?'1':'';}catch(e){}}
 $('dmToggle').onclick=async()=>{try{if($('dmToggle').dataset.on){await inv('daemon_disable');}else{await inv('daemon_enable',{hour:+$('dmHour').value,workspace:AGENCY_WS});}await refreshDaemonUI();}catch(e){toast('后台设置失败：'+e);}};
 $('dmHour').onchange=async()=>{if($('dmToggle').dataset.on){try{await inv('daemon_enable',{hour:+$('dmHour').value,workspace:AGENCY_WS});}catch(e){toast('改时辰失败：'+e);}}};
-$('dmRunNow').onclick=async()=>{try{await inv('daemon_run_now',{workspace:AGENCY_WS});$('dmRunNow').textContent='冲洗中…（好了会有通知）';setTimeout(()=>$('dmRunNow').textContent='现在冲洗',8000);}catch(e){toast(e);}};
+$('dmRunNow').onclick=async()=>{try{await inv('daemon_run_now',{workspace:AGENCY_WS});$('dmRunNow').textContent='冲洗中…（好了会有通知）';setTimeout(()=>$('dmRunNow').textContent='现在就跑一次',8000);}catch(e){toast(e);}};
 function dvShow(){const p=$('dvPreset').value;$('dvEndpoint').style.display=p?'block':'none';$('dvTemplate').style.display=p==='custom'?'block':'none';$('dvPrivacy').style.display=p?'block':'none';$('dvPrivacy').textContent=DV_PRIVACY[p]??'';}
 $('dvPreset').onchange=dvShow;
-$('dvSave').onclick=async()=>{const p=$('dvPreset').value;await agPost('/agency/delivery',{enabled:!!p,preset:p,endpoint:$('dvEndpoint').value.trim(),...(p==='custom'?{template:$('dvTemplate').value}:{})}).then(()=>{$('dvSave').textContent='已保存';setTimeout(()=>$('dvSave').textContent='保存投递',1500);}).catch(e=>toast('保存失败：'+e));};
+$('dvSave').onclick=async()=>{const p=$('dvPreset').value;await agPost('/agency/delivery',{enabled:!!p,preset:p,endpoint:$('dvEndpoint').value.trim(),...(p==='custom'?{template:$('dvTemplate').value}:{})}).then(()=>{$('dvSave').textContent='已保存';setTimeout(()=>$('dvSave').textContent='保存',1500);}).catch(e=>toast('保存失败：'+e));};
 $('dvTest').onclick=async()=>{try{const r=await agPost('/agency/deliver-test',{});toast(r.ok?'测试投递成功（HTTP '+r.status+'），去看看收到没':'测试没发出去：'+(r.error??JSON.stringify(r)));}catch(e){toast('测试失败：'+e);}};
 async function loadDeliveryUI(){try{const d=await fetch(agBase()+'/agency/delivery'+agQ()).then(r=>r.json());$('dvPreset').value=d.preset??'';$('dvEndpoint').value=d.endpoint??'';$('dvTemplate').value=d.template??'';dvShow();}catch(e){}}
 

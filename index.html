@@ -1,0 +1,1147 @@
+<!-- SIRY · 灵魂显影室 — 单文件网页版。浏览器（Chrome/Edge）打开，选「贴一个 AI 钥匙」填 OpenRouter key 即用。全部在你本机浏览器里跑，无 SIRY 服务器。 -->
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SIRY · 灵魂显影室</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500&family=Noto+Sans+SC:wght@300;400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#f4f0ff; --ink2:#d4cdf0; --ink3:#a99fce;
+  --door:#ffd9a0; --glow:rgba(255,185,120,.5);
+  --line:rgba(255,255,255,.13); --panel:rgba(255,255,255,.06); --panel2:rgba(255,255,255,.10);
+  --serif:'Noto Serif SC',Georgia,serif; --sans:'Noto Sans SC',-apple-system,system-ui,'PingFang SC',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:var(--sans);font-weight:300;color:var(--ink);-webkit-font-smoothing:antialiased;overflow-x:hidden;
+  background:radial-gradient(130% 95% at 50% -5%,#4f3680 0%,#2f2159 40%,#1b1540 70%,#0f0b26 100%) fixed}
+.scrn{display:none;min-height:100%}
+.scrn.on{display:block}
+.wrap{max-width:760px;margin:0 auto;padding:0 22px}
+.serif{font-family:var(--serif)}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes breathe{0%,100%{opacity:.9}50%{opacity:1}}
+
+/* HOME */
+#home .hero{text-align:center;padding:11vh 0 5vh}
+#home .hero svg{animation:breathe 7s ease-in-out infinite}
+#home h1{font-family:var(--serif);font-weight:400;font-size:clamp(28px,5vw,42px);line-height:1.45;margin:26px 0 0}
+#home .sub{font-family:var(--serif);font-size:clamp(15px,2.3vw,19px);color:var(--ink2);margin-top:16px}
+.doorbtn{display:inline-flex;flex-direction:column;align-items:center;gap:16px;cursor:pointer;background:none;border:none;margin-top:5vh}
+.doorbtn .lbl{font-family:var(--serif);font-size:18px;color:var(--ink)}
+.doorbtn svg{filter:drop-shadow(0 0 22px var(--glow));transition:.4s}
+.doorbtn:hover svg{filter:drop-shadow(0 0 44px var(--glow));transform:translateY(-3px)}
+.meta{font-size:12.5px;color:var(--ink3);margin-top:14px}
+.foyer{margin:11vh auto 12vh;text-align:center;border-top:0.5px solid var(--line);padding-top:9vh;max-width:520px}
+.foyer.locked .doorbtn{cursor:default;opacity:.42}
+.foyer.locked .doorbtn:hover svg{filter:drop-shadow(0 0 0 transparent);transform:none}
+.foyer .hd{font-family:var(--serif);font-size:14.5px;color:var(--ink3);line-height:1.9}
+
+/* SETUP */
+#setup .box{margin:9vh auto;max-width:520px;background:var(--panel);border:0.5px solid var(--line);border-radius:22px;padding:36px 32px;text-align:center}
+#setup h2{font-family:var(--serif);font-weight:400;font-size:23px;margin-bottom:18px}
+#setup label{display:block;text-align:left;font-size:12.5px;color:var(--ink3);margin:14px 0 6px}
+#setup input,#setup select{width:100%;padding:12px 14px;border-radius:12px;border:0.5px solid var(--line);background:rgba(0,0,0,.22);color:var(--ink);font-family:var(--sans);font-size:14px;outline:none}
+#setup input:focus,#setup select:focus{border-color:var(--door)}
+.btn{font-family:var(--serif);font-size:16px;color:#1b1540;background:var(--door);border:none;border-radius:40px;padding:13px 30px;cursor:pointer;transition:.3s;margin-top:22px}
+.btn:hover{box-shadow:0 0 34px var(--glow)}
+.note{font-size:12px;color:var(--ink3);line-height:1.7;margin-top:16px;text-align:left}
+
+/* CHAT */
+#chat{display:none;flex-direction:column;height:100%}
+#chat.on{display:flex}
+#bar{display:flex;align-items:center;justify-content:space-between;padding:16px 4px 14px;border-bottom:0.5px solid var(--line);max-width:760px;margin:0 auto;width:100%}
+#bar .ttl{font-size:13px;letter-spacing:.16em;color:var(--door)}
+#bar .meta{margin-top:2px}
+#bar .tools button{background:none;border:0.5px solid var(--line);color:var(--ink2);font-family:var(--sans);font-size:12px;border-radius:20px;padding:6px 12px;cursor:pointer;margin-left:8px}
+#bar .tools button:hover{border-color:var(--door);color:var(--ink)}
+#log{flex:1;overflow-y:auto;padding:22px 4px;display:flex;flex-direction:column;gap:18px;max-width:760px;margin:0 auto;width:100%}
+.msg{display:flex;gap:12px;max-width:90%}
+.msg.me{align-self:flex-end;flex-direction:row-reverse}
+.msg .av{flex:none;width:38px;line-height:0;margin-top:2px}
+.bub{padding:13px 17px;border-radius:18px;font-size:15px;line-height:1.85;white-space:pre-wrap;word-break:break-word}
+.msg.ml .bub{background:var(--panel2);border:0.5px solid var(--line);border-top-left-radius:6px}
+.msg.me .bub{background:rgba(255,180,120,.16);border:0.5px solid rgba(255,180,120,.28);border-top-right-radius:6px;color:#fff4e6}
+.msg.ml .nm{font-size:11.5px;color:var(--door);letter-spacing:.1em;margin-bottom:5px}
+.typing{font-size:13px;color:var(--ink3);font-style:italic;padding:4px 50px}
+#inrow{display:flex;gap:10px;align-items:flex-end;padding:14px 0 18px;border-top:0.5px solid var(--line);max-width:760px;margin:0 auto;width:100%}
+#in{flex:1;resize:none;min-height:46px;max-height:140px;padding:12px 16px;border-radius:16px;border:0.5px solid var(--line);background:rgba(0,0,0,.22);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.6;outline:none}
+#in:focus{border-color:var(--door)}
+#send{flex:none;width:46px;height:46px;border-radius:50%;border:none;background:var(--door);color:#1b1540;font-size:20px;cursor:pointer}
+#send:hover{box-shadow:0 0 26px var(--glow)}
+#send[disabled]{opacity:.4}
+
+/* ROUNDTABLE */
+#rt .top{display:flex;align-items:center;justify-content:space-between;padding:18px 0 14px;border-bottom:0.5px solid var(--line)}
+#rt .top .t{font-family:var(--serif);font-size:20px}
+#rt .back{background:none;border:0.5px solid var(--line);color:var(--ink2);font-family:var(--sans);font-size:13px;border-radius:20px;padding:7px 14px;cursor:pointer}
+#rt .back:hover{border-color:var(--door);color:var(--ink)}
+#rt .body{padding:30px 2px 14vh;font-size:15px;line-height:2;white-space:pre-wrap;word-break:break-word;color:var(--ink2)}
+#rt .body b.mn{display:inline-block;color:var(--door);font-family:var(--serif);font-weight:500;font-size:16px;margin-top:18px}
+
+/* CONSENT */
+.overlay{position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(12,9,28,.82);backdrop-filter:blur(3px)}
+.overlay.on{display:flex}
+.dlg{max-width:470px;width:100%;background:linear-gradient(180deg,#33255f,#251b49);border:0.5px solid var(--line);border-radius:22px;padding:32px;text-align:center}
+.dlg h3{font-family:var(--serif);font-weight:400;font-size:20px;margin-bottom:14px}
+.dlg p{font-size:14px;color:var(--ink2);line-height:1.85;margin-bottom:24px}
+.dlg-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.ghost{background:none;border:0.5px solid var(--line);color:var(--ink2);font-family:var(--sans);font-size:14px;border-radius:30px;padding:11px 22px;cursor:pointer}
+.ghost:hover{border-color:var(--door);color:var(--ink)}
+.solid{background:var(--door);color:#1b1540;border:none;font-family:var(--sans);font-size:14px;border-radius:30px;padding:11px 22px;cursor:pointer}
+b{font-weight:500}
+#chipsWrap .grp{margin:16px 0 4px}
+#chipsWrap .gl{font-size:12.5px;color:var(--ink3);margin-bottom:9px}
+#chipsWrap .chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-size:13px;color:var(--ink2);border:0.5px solid var(--line);background:rgba(0,0,0,.16);border-radius:22px;padding:7px 14px;cursor:pointer;transition:.2s;font-family:var(--sans)}
+.chip:hover{border-color:var(--ink3)}
+.chip.on{border-color:var(--door);background:rgba(255,180,120,.14);color:var(--ink)}
+.cli-card{display:flex;flex-direction:column;gap:3px;text-align:left;padding:13px 14px;border-radius:14px;border:0.5px solid var(--line);background:rgba(0,0,0,.18);cursor:pointer;transition:.2s}
+.cli-card:hover{border-color:var(--ink3)}
+.cli-card.sel{border-color:var(--door);background:rgba(255,180,120,.12);box-shadow:0 0 18px rgba(255,180,120,.18)}
+.cli-card .cn{font-size:14px;color:var(--ink)}
+.cli-card .cd{font-size:11.5px;color:var(--ink3)}
+.think-chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ink3);border:0.5px solid var(--line);border-radius:16px;padding:4px 10px;margin:2px 0 8px}
+.think-chip .dot{width:6px;height:6px;border-radius:50%;background:var(--door);animation:breathe 1.6s ease-in-out infinite}
+.think-chip.donez .dot{animation:none;opacity:.5}
+.waitline{font-size:13px;color:var(--ink3);font-style:italic;padding:4px 50px}
+
+.scard{margin:10px 0;padding:14px 16px;border:0.5px solid var(--line);border-radius:16px;background:var(--panel)}
+.scard-q{font-family:var(--serif);font-size:15px;margin-bottom:10px}
+.scard-opts{display:flex;flex-wrap:wrap;gap:8px}
+.scard-opt{font-family:var(--sans);font-size:13.5px;color:var(--ink);background:rgba(0,0,0,.18);border:0.5px solid var(--line);border-radius:20px;padding:8px 14px;cursor:pointer;transition:.2s}
+.scard-opt:hover{border-color:var(--door);box-shadow:0 0 14px var(--glow)}
+.scard-opt:disabled{opacity:.4;cursor:default;box-shadow:none;border-color:var(--line)}
+/* 群星 loading：星座缓缓聚拢 + 双语大师语录轮播 */
+#rtBody .rtl{display:flex;flex-direction:column;align-items:center;padding-top:8px;white-space:normal}
+#rtBody .rtl-const{width:min(560px,92%);height:auto;margin:6px 0 4px}
+#rtBody .rtl-st{animation:rtltw 5.6s ease-in-out infinite;animation-delay:var(--d);transform-box:fill-box;transform-origin:center}
+#rtBody .rtl-st.dim{opacity:.5}
+@keyframes rtltw{0%,100%{opacity:.3;transform:scale(.92)}50%{opacity:1;transform:scale(1.08)}}
+#rtBody .rtl-ln{stroke-dasharray:640;stroke-dashoffset:640;animation:rtldraw 6s ease forwards .6s,rtlbr 9s ease-in-out infinite 6.6s}
+#rtBody .rtl-ln2{animation:rtldraw 5.2s ease forwards 3.4s,rtlbr 9s ease-in-out infinite 8.6s}
+@keyframes rtldraw{to{stroke-dashoffset:0}}
+@keyframes rtlbr{0%,100%{opacity:1}50%{opacity:.4}}
+#rtBody .rtl-status{font-size:13px;color:var(--ink3);letter-spacing:.14em;margin-top:12px}
+#rtBody .rtl-q{margin-top:44px;max-width:560px;text-align:center;transition:opacity 1s ease,transform 1s ease}
+#rtBody .rtl-q.out{opacity:0;transform:translateY(10px)}
+#rtBody .rtl-en{font-family:var(--serif);font-size:24px;line-height:1.55}
+#rtBody .rtl-zh{margin-top:12px;font-size:15px;line-height:1.7;color:var(--ink3);font-weight:300}
+#rtBody .rtl-a{margin-top:20px;font-size:12.5px;color:var(--ink3);letter-spacing:.05em}
+#rtBody .rtl-a b{color:var(--door);font-weight:500}
+.scard-hint{font-size:12px;color:var(--ink3);letter-spacing:.06em;margin-bottom:6px}
+.scard.seal{text-align:center}
+.seal-face{font-size:40px;filter:drop-shadow(0 0 12px var(--glow));animation:breathe 2.4s ease-in-out infinite}
+.scard.reveal{transform:perspective(600px) rotateY(90deg);transition:transform .5s ease}
+.scard.reveal.flip{transform:perspective(600px) rotateY(0)}
+.scard.reveal.hit{border-color:rgba(255,200,140,.6);box-shadow:0 0 24px var(--glow)}
+.scard.reveal.miss{opacity:.92}
+.reveal-body,.kernel-body{font-size:14.5px;line-height:1.8;white-space:pre-wrap}
+.scard.kernel{border-color:rgba(255,217,160,.5)}
+.scard.kernel .scard-opt{margin-top:10px}
+
+/* FORGE 灵魂地图：底片显影 */
+#soulMap .filmgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;padding:20px 0}
+.film{position:relative;border:0.5px solid var(--line);border-radius:12px;background:rgba(0,0,0,.28);padding:16px 14px;min-height:96px;transition:.4s}
+.film .rt{font-family:var(--serif);font-size:14.5px;line-height:1.6;color:var(--ink)}
+.film .meta{font-size:11.5px;color:var(--ink3);margin-top:8px}
+.film.sharp{border-color:var(--door);box-shadow:0 0 18px rgba(255,185,120,.18)}
+.relic{margin:30px auto 8px;width:120px;height:120px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:40px;border:0.5px solid var(--line);transition:1.2s}
+.relic.on{border-color:var(--door);box-shadow:0 0 60px var(--glow);background:radial-gradient(circle,rgba(255,217,160,.25),transparent)}
+#relicMoment{position:fixed;inset:0;z-index:120;display:none;align-items:center;justify-content:center;background:rgba(8,6,20,.96);text-align:center;padding:30px}
+#relicMoment.on{display:flex}
+
+.ob-card{display:flex;align-items:flex-start;gap:14px;text-align:left;width:100%;cursor:pointer;font-family:inherit;color:inherit;background:rgba(255,255,255,.05);border:0.5px solid var(--line);border-radius:18px;padding:18px 16px;margin-top:12px;transition:.25s}
+.ob-card:hover{border-color:var(--ink3)}
+.ob-card.on{border-color:var(--door);background:rgba(255,200,140,.08);box-shadow:0 0 30px rgba(255,185,120,.14)}
+.ob-card .ob-t{font-size:16px;margin-bottom:4px;color:var(--ink)}
+.ob-card .ob-d{font-family:var(--sans);font-size:12.5px;color:var(--ink3);line-height:1.7}
+.ob-card .ob-tag{display:inline-block;margin-left:6px;font-size:11px;color:var(--door);border:0.5px solid rgba(255,217,160,.4);border-radius:20px;padding:1px 9px}
+#advBox{margin-top:8px;padding:12px 0 0}
+#advToggle{font-family:var(--sans);font-size:12.5px;color:var(--ink3);cursor:pointer;opacity:.8;margin-top:14px;user-select:none}
+
+</style>
+</head>
+<body>
+
+<div class="scrn on" id="home"><div class="wrap">
+  <div class="hero">
+    <svg viewBox="0 0 360 250" width="320" aria-hidden="true">
+      <defs>
+        <radialGradient id="dg" cx="50%" cy="60%" r="60%"><stop offset="0%" stop-color="#fff1d8"/><stop offset="45%" stop-color="#ffc486"/><stop offset="100%" stop-color="#e07a4c"/></radialGradient>
+        <radialGradient id="pool" cx="50%" cy="0%" r="100%"><stop offset="0%" stop-color="rgba(255,200,140,.4)"/><stop offset="100%" stop-color="rgba(255,200,140,0)"/></radialGradient>
+        <radialGradient id="bloom" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="rgba(255,176,108,.45)"/><stop offset="60%" stop-color="rgba(255,176,108,.12)"/><stop offset="100%" stop-color="rgba(255,176,108,0)"/></radialGradient>
+      </defs>
+      <ellipse cx="180" cy="225" rx="150" ry="22" fill="url(#pool)"/>
+      <polygon points="110,60 250,60 250,210 110,210" fill="#2a1f58"/>
+      <ellipse cx="180" cy="150" rx="78" ry="96" fill="url(#bloom)"/>
+      <polygon points="110,60 132,48 132,198 110,210" fill="#221a45"/>
+      <polygon points="250,60 272,48 272,198 250,210" fill="#34286a"/>
+      <polygon points="110,60 132,48 272,48 250,60" fill="#473785"/>
+      <path d="M146 210 L146 120 Q146 80 180 80 Q214 80 214 120 L214 210 Z" fill="#100b26"/>
+      <path d="M154 210 L154 122 Q154 90 180 90 Q206 90 206 122 L206 210 Z" fill="url(#dg)"/>
+      <g transform="translate(180 210)"><path d="M0 -30 C-8 -30 -12 -9 -13 0 L13 0 C12 -9 8 -30 0 -30 Z" fill="#150f2c"/><circle cx="0" cy="-35" r="6.5" fill="#150f2c"/></g>
+    </svg>
+    <h1>让那个你，<br>慢慢显影出来。</h1>
+    <div class="sub">在没有人看见的地方。</div>
+    <button class="doorbtn" onclick="show('setup')">
+      <svg viewBox="0 0 80 108" width="76" aria-hidden="true"><path d="M12 104 Q12 16 40 16 Q68 16 68 104 Z" fill="#130e2b" stroke="rgba(255,217,160,.5)" stroke-width="1"/><path d="M19 104 Q19 26 40 26 Q61 26 61 104 Z" fill="url(#dg)"/></svg>
+      <span class="lbl">推开这扇门 · 与美玲同行</span>
+    </button>
+    <div class="meta">约 20 分钟 · 只有你和美玲 · 随时可停</div>
+  </div>
+
+  <div class="foyer locked" id="foyer">
+    <button class="doorbtn" id="rtDoor" onclick="openRoundtable()">
+      <svg viewBox="0 0 60 80" width="52" aria-hidden="true"><path d="M9 77 Q9 14 30 14 Q51 14 51 77 Z" fill="#130e2b" stroke="rgba(255,217,160,.45)" stroke-width="1"/><path d="M15 77 Q15 22 30 22 Q45 22 45 77 Z" fill="rgba(255,180,120,.16)"/></svg>
+      <span class="lbl" id="rtLbl"></span>
+    </button>
+    <button class="doorbtn" id="dailyDoor" style="display:none" onclick="openDaily()">
+      <svg viewBox="0 0 60 80" width="46" aria-hidden="true"><path d="M9 77 Q9 14 30 14 Q51 14 51 77 Z" fill="#130e2b" stroke="rgba(255,217,160,.45)" stroke-width="1"/><path d="M15 77 Q15 22 30 22 Q45 22 45 77 Z" fill="rgba(255,200,140,.30)"/></svg>
+      <span class="lbl" id="dailyLbl">今日显影 · 已冲洗好</span>
+    </button>
+    <button class="doorbtn" id="mapDoor" style="display:none" onclick="openSoulMap()">
+      <svg viewBox="0 0 60 80" width="46" aria-hidden="true"><rect x="12" y="16" width="36" height="48" rx="4" fill="#130e2b" stroke="rgba(255,217,160,.45)" stroke-width="1"/><circle cx="30" cy="40" r="9" fill="rgba(255,200,140,.30)"/></svg>
+      <span class="lbl">灵魂地图</span>
+    </button>
+    <div class="hd" id="foyerHd">走完显影之后，这扇门会轻轻亮起——<br>门后，是群星在聊今天的你。</div>
+    <div style="margin-top:24px"><label id="impLabel" style="font-size:13px;color:var(--ink3);cursor:pointer;border-bottom:0.5px solid var(--line);padding-bottom:2px">已经聊过了？导入内核（siry-kernel.txt），直接推门看群星 →</label><input id="impf" type="file" style="display:none"></div>
+  </div>
+  <div style="text-align:center;padding-bottom:6vh"><button type="button" class="ghost" style="padding:7px 16px;font-size:12.5px" onclick="show('settings')">⚙ 设置</button></div>
+</div></div>
+
+<div class="scrn" id="setup"><div class="wrap"><div class="box">
+  <h2 class="serif">进入显影室</h2>
+  <div style="font-family:var(--sans);font-size:13px;color:var(--ink3);margin:-8px 0 24px;line-height:1.6">选一种方式连上 AI 就好。填错也不怕，随时能改。</div>
+  <select id="provider" style="display:none">
+    <option value="sdk">Claude 订阅（推荐 · 免 key 免安装）</option>
+    <option value="cli">本机助手（已装 claude/opencode 的用）</option>
+    <option value="anthropic">自带 Anthropic Key</option>
+    <option value="openrouter">自带 OpenRouter Key（任意模型）</option>
+    <option value="cloud" disabled>云端零配置（即将到来）</option>
+  </select>
+  <button type="button" class="ob-card" id="cardSub" onclick="pickProvider('sdk')">
+    <div style="font-size:22px;line-height:1.3">🔑</div>
+    <div><div class="ob-t">用我的 Claude 账号<span class="ob-tag">推荐 · macOS</span></div><div class="ob-d">登录一次，免填钥匙、免安装。</div></div>
+  </button>
+  <button type="button" class="ob-card" id="cardKey" onclick="pickProvider('openrouter')">
+    <div style="font-size:22px;line-height:1.3">🗝️</div>
+    <div><div class="ob-t">贴一个 AI 钥匙（API Key）</div><div class="ob-d">已经有 OpenRouter 之类的 key？粘进来就能用。</div></div>
+  </button>
+  <div id="anthropicBox">
+    <label>Anthropic API Key（sk-ant-…）</label>
+    <input id="akey" type="password" placeholder="粘贴你的 Anthropic key" autocomplete="off">
+    <label>模型</label>
+    <select id="amodel">
+      <option value="claude-sonnet-4-6">Claude Sonnet 4.6（推荐）</option>
+      <option value="claude-opus-4-8">Claude Opus 4.8（更深，更慢/贵）</option>
+    </select>
+  </div>
+  <div id="orBox" style="display:none">
+    <label>你的 OpenRouter 钥匙</label>
+    <input id="orkey" type="password" placeholder="粘贴你的 OpenRouter key" autocomplete="off">
+    <label>用哪个模型（填 OpenRouter 上的模型名）</label>
+    <input id="ormodel" type="text" placeholder="如 anthropic/claude-sonnet-4.6 · openai/o3 · google/gemini-2.5-pro" autocomplete="off">
+  </div>
+  <div id="sdkBox">
+    <div id="sdkStat" style="font-size:12.5px;color:var(--ink3);margin:10px 0 4px;line-height:1.7">正在检查运行时…</div>
+    <div id="sdkProg" style="display:none;margin:8px 0"><div style="height:6px;border-radius:3px;background:rgba(0,0,0,.25);overflow:hidden"><div id="sdkBar" style="height:100%;width:0%;background:var(--door);transition:width .3s"></div></div><div id="sdkProgTxt" class="note" style="margin-top:6px">正在准备暗房…</div></div>
+    <button type="button" class="btn" id="sdkAction" style="display:none">下载运行时（约 130MB · 全部来自 Node/npm 官方源，一次即可）</button>
+  </div>
+  <div id="cliBox" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin:6px 0 4px">
+      <label style="margin:0">本机已就绪的助手</label>
+      <button type="button" id="rescan" style="background:none;border:0.5px solid var(--line);color:var(--ink2);font-family:var(--sans);font-size:12px;border-radius:18px;padding:5px 12px;cursor:pointer">↻ 重新探测</button>
+    </div>
+    <div id="cliStat" style="font-size:12.5px;color:var(--ink3);margin:2px 0 8px;line-height:1.6"></div>
+    <div id="cliGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px"></div>
+    <select id="clicli" style="display:none"></select>
+    <label>模型（claude: sonnet / opus　·　opencode: provider/model）</label>
+    <input id="climodel" type="text" placeholder="sonnet" autocomplete="off">
+  </div>
+  <div id="advToggle">其它接法（本机 Claude CLI · Anthropic Key）›</div>
+  <div id="advBox" style="display:none">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:2px">
+      <button type="button" class="ghost" style="padding:7px 14px;font-size:12.5px" onclick="pickProvider('cli')">本机 Claude CLI</button>
+      <button type="button" class="ghost" style="padding:7px 14px;font-size:12.5px" onclick="pickProvider('anthropic')">Anthropic Key</button>
+    </div>
+    <label>推理深度</label>
+    <select id="effort"><option value="high">高 · 推荐</option><option value="xhigh">很高</option><option value="max">最高</option></select>
+  </div>
+  <button class="btn" id="enter">推开这扇门 →</button>
+  <div class="note">· key 只存本机浏览器，仅用于直接调用你选的服务。<br>· 对话直连服务商，不经第三方、邀请你的人也看不到。</div>
+</div></div></div>
+
+<div class="scrn" id="settings"><div class="wrap"><div class="box" style="max-width:560px">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+    <h2 class="serif" style="margin:0">设置 · 进阶</h2>
+    <button class="ghost" style="padding:7px 14px" onclick="show('home')">← 回门厅</button>
+  </div>
+  <div class="note" style="margin-bottom:8px">下面这些都是<b>可选</b>的，不设也能用。每日显影、自动冲洗、投递需要「Claude 订阅」接法。</div>
+  <div class="note" style="margin-top:22px;border-top:0.5px solid var(--line);padding-top:16px">📓 <b>每日显影</b>（日课）——按你的品味每天挑几条资讯、写成日报。<b>需选用「Claude 订阅」provider</b>；其它 provider 下暂不可用。</div>
+  <label>日课工作区（Soul-pack 与日报所在目录；留空用默认）</label>
+  <input id="agws" type="text" placeholder="/Users/你/项目/SIRY_AI/siry_ai" autocomplete="off">
+  <label>行为记录（只存本机 · 可看可删）</label>
+  <select id="agconsent">
+    <option value="on">开（推荐）——用点开/划走帮品味进化</option>
+    <option value="off">关——日课只推不学</option>
+    <option value="granular">细粒度——开，但按主题留白</option>
+  </select>
+  <div id="agAvoidBox" style="display:none">
+    <label>别学我这个（每行一个主题，编进 SOUL 禁区）</label>
+    <textarea id="agavoid" rows="2" style="width:100%;padding:10px 14px;border-radius:12px;border:0.5px solid var(--line);background:rgba(0,0,0,.22);color:var(--ink);font-family:var(--sans);font-size:13px"></textarea>
+  </div>
+  <div class="note">· 信号永不出本机。<button type="button" id="agwipe" style="background:none;border:none;color:var(--door);cursor:pointer;font-size:12px;text-decoration:underline">删除原始信号记录</button> · <button type="button" id="agwipeAll" style="background:none;border:none;color:var(--door);cursor:pointer;font-size:12px;text-decoration:underline">把道场也一并抹去（地图·舍利子·碰撞史）</button></div>
+  <label>每日自动显影（后台定点冲洗，不用开 app）</label>
+  <div style="display:flex;gap:10px;align-items:center">
+    <select id="dmHour" style="flex:1"></select>
+    <button type="button" id="dmToggle" class="ghost" style="padding:9px 18px">…</button>
+    <button type="button" id="dmRunNow" class="ghost" style="padding:9px 18px">现在冲洗</button>
+  </div>
+  <div class="note" id="dmNote">开启后 macOS 会在「登录项与扩展」里提示 SIRY 的后台项——那就是它。随时可关，关了就只在你打开 app 时冲洗。</div>
+  <label>把日报投到你在的地方（只投不采：点开/划走仍只在 app 里记）</label>
+  <select id="dvPreset">
+    <option value="">不投递</option>
+    <option value="wecom">企业微信群机器人</option>
+    <option value="feishu">飞书自定义机器人</option>
+    <option value="serverchan">Server酱（进个人微信）</option>
+    <option value="bark">Bark（iPhone 推送）</option>
+    <option value="custom">自定义 webhook</option>
+  </select>
+  <input id="dvEndpoint" type="text" placeholder="粘贴 webhook 地址" style="display:none" autocomplete="off">
+  <textarea id="dvTemplate" rows="2" placeholder='自定义模板，可用 {{date}} {{title}} {{text}}；若端点要 JSON，请自己给占位加引号（原样发送，不代验证）' style="display:none;width:100%;padding:10px 14px;border-radius:12px;border:0.5px solid var(--line);background:rgba(0,0,0,.22);color:var(--ink);font-family:var(--sans);font-size:13px"></textarea>
+  <div class="note" id="dvPrivacy" style="display:none"></div>
+  <div style="display:flex;gap:10px"><button type="button" id="dvSave" class="ghost" style="padding:9px 18px">保存投递</button><button type="button" id="dvTest" class="ghost" style="padding:9px 18px">测试投递</button></div>
+</div></div></div>
+
+<div class="scrn" id="about"><div class="wrap"><div class="box" style="max-width:560px">
+  <h2 class="serif">在开始之前，关于你</h2>
+  <p class="note" style="text-align:center;margin:0 0 6px">几个轻轻的小问题，帮美玲少问几句重复的。<b>可跳过</b>——真正的你，还是靠接下来慢慢聊。</p>
+  <div id="chipsWrap"></div>
+  <div style="display:flex;gap:12px;justify-content:center;margin-top:24px">
+    <button class="ghost" id="aboutSkip">跳过</button>
+    <button class="solid" id="aboutGo">开始显影 →</button>
+  </div>
+  <div class="note" style="text-align:center">这些只留在你这台机器上。</div>
+</div></div></div>
+
+<div class="scrn" id="chat">
+  <div id="bar">
+    <div><div class="ttl">SIRY · 灵魂显影室</div><div class="meta">没有人在看 · 随时可停</div></div>
+    <div class="tools"><button id="fin">完成显影 · 回门厅</button><button id="exp">导出</button></div>
+  </div>
+  <div id="log"></div>
+  <div class="wrap" style="width:100%"><div id="inrow">
+    <textarea id="in" placeholder="说点真的……（Enter 发送，Shift+Enter 换行）"></textarea>
+    <button id="send" aria-label="发送">↑</button>
+  </div></div>
+</div>
+
+<div class="scrn" id="rt"><div class="wrap">
+  <div class="top"><div class="t serif">群星 · 旁听席</div><button class="back" onclick="show('home')">← 回门厅</button></div>
+  <div class="body" id="rtBody"></div>
+</div></div>
+
+<div class="scrn" id="agencyView"><div class="wrap">
+  <div class="top" style="display:flex;align-items:center;justify-content:space-between;padding:18px 0 14px;border-bottom:0.5px solid var(--line)">
+    <div class="t serif" style="font-size:20px">每日显影 · <span id="agDate"></span></div>
+    <div><button class="back" style="background:none;border:0.5px solid var(--line);color:var(--ink2);font-size:13px;border-radius:20px;padding:7px 14px;cursor:pointer" onclick="openReportFile()">打开日报文件</button>
+    <button class="back" style="background:none;border:0.5px solid var(--line);color:var(--ink2);font-size:13px;border-radius:20px;padding:7px 14px;cursor:pointer;margin-left:8px" onclick="show('home')">← 回门厅</button></div>
+  </div>
+  <div id="agItems" style="padding:22px 0 12vh"></div>
+</div></div>
+
+<div class="scrn" id="soulMap"><div class="wrap">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 0 6px">
+    <div class="serif" style="font-size:20px">灵魂地图 · 每格底片都在显影</div>
+    <button class="ghost" style="padding:7px 14px" onclick="show('home')">← 回门厅</button>
+  </div>
+  <div class="note">碰撞越一致，底片越清晰。这是一面镜子，不是进度条——看完就走，明天它自己会更清楚一点。</div>
+  <div class="relic" id="relicEl">·</div>
+  <div class="note" id="relicNote" style="text-align:center"></div>
+  <div class="filmgrid" id="filmGrid"></div>
+</div></div>
+<div id="relicMoment"><div style="max-width:520px">
+  <div id="rmLight" style="width:10px;height:10px;border-radius:50%;margin:0 auto 30px;background:var(--door);box-shadow:0 0 0px var(--glow);transition:box-shadow 3s,width 3s,height 3s"></div>
+  <div class="serif" style="font-size:21px;margin-bottom:16px">我好像看清你了。</div>
+  <div id="rmSketch" style="font-size:15px;line-height:2;color:var(--ink2);white-space:pre-wrap"></div>
+  <div style="margin-top:28px"><button class="ghost" id="rmTake" style="padding:10px 20px">带走舍利子</button>
+  <button class="solid" id="rmClose" style="padding:10px 20px;margin-left:10px">收下了</button></div>
+</div></div>
+
+<div class="overlay" id="consent"><div class="dlg">
+  <h3 id="cTitle"></h3><p id="cBody"></p>
+  <div class="dlg-btns"><button class="ghost" id="cBack">换一个模型</button><button class="solid" id="cGo">仍要继续</button></div>
+</div></div>
+
+<script>
+// SIRY v2 — <siry-*> 标签流解析与卡片渲染。经典脚本，挂 globalThis。
+// 纪律：一切内容经 textContent；未知/残缺标签降级纯文本；解析器流式安全。
+(() => {
+  const KNOWN = ['siry-choices', 'siry-bet-seal', 'siry-bet-reveal', 'siry-kernel'];
+  const OPEN_RE = /<siry-([a-z-]+)((?:\s+[a-z]+="[^"]*")*)\s*(\/?)>/;
+
+  function parseAttrs(s) {
+    const out = {};
+    for (const m of s.matchAll(/([a-z]+)="([^"]*)"/g)) out[m[1]] = m[2];
+    return out;
+  }
+
+  function parseStream(buffer) {
+    const segments = [];
+    let s = buffer;
+    while (true) {
+      const lt = s.indexOf('<siry-');
+      if (lt === -1) {
+        // 尾部可能是半截 '<siry' 前缀？只有 '<'~'<siry-' 的不完整前缀才留 rest
+        const tail = s.match(/<(s(i(r(y(-?)?)?)?)?)?$/);
+        if (tail && tail.index > 0) { segments.push({ type: 'text', content: s.slice(0, tail.index) }); return { segments, rest: s.slice(tail.index) }; }
+        if (tail) return { segments, rest: s };
+        if (s) segments.push({ type: 'text', content: s });
+        return { segments, rest: '' };
+      }
+      if (lt > 0) { segments.push({ type: 'text', content: s.slice(0, lt) }); s = s.slice(lt); }
+      const m = s.match(OPEN_RE);
+      if (!m || m.index !== 0) {
+        if (s.length > 200 && !s.slice(0, 200).includes('>')) { // 病态长"标签"，放弃当文本
+          segments.push({ type: 'text', content: s }); return { segments, rest: '' };
+        }
+        return { segments, rest: s }; // 开标签未到齐
+      }
+      const [whole, name, attrStr, selfClose] = m;
+      if (!KNOWN.includes(`siry-${name}`)) { // 未知标签 → 文本（含整个开标签），继续扫其后
+        segments.push({ type: 'text', content: whole }); s = s.slice(whole.length); continue;
+      }
+      const attrs = parseAttrs(attrStr);
+      if (selfClose === '/') {
+        s = s.slice(whole.length);
+        if (name === 'bet-seal') segments.push({ type: 'bet-seal', id: attrs.id ?? '' });
+        else segments.push({ type: 'text', content: whole }); // 其它标签不该自闭 → 文本
+        continue;
+      }
+      const closeTag = `</siry-${name}>`;
+      const end = s.indexOf(closeTag, whole.length);
+      if (end === -1) return { segments, rest: s }; // 配对未闭合 → 全留 rest
+      const inner = s.slice(whole.length, end);
+      s = s.slice(end + closeTag.length);
+      if (name === 'choices') {
+        segments.push({ type: 'choices', q: attrs.q ?? '', options: inner.split('|').map(x => x.trim()).filter(Boolean) });
+      } else if (name === 'bet-reveal') {
+        segments.push({ type: 'bet-reveal', id: attrs.id ?? '', hit: attrs.hit === 'true' ? true : attrs.hit === 'false' ? false : null, content: inner });
+      } else if (name === 'kernel') {
+        segments.push({ type: 'kernel', content: inner });
+      } else if (name === 'bet-seal') { // 成对写法也接受
+        segments.push({ type: 'bet-seal', id: attrs.id ?? '' });
+      }
+    }
+  }
+
+  function el(tag, cls, text) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+
+  function renderSegment(seg, handlers = {}) {
+    if (seg.type === 'text') { const s = el('span'); s.textContent = seg.content; return s; }
+    if (seg.type === 'choices') {
+      const box = el('div', 'scard choices');
+      if (seg.q) box.appendChild(el('div', 'scard-q', seg.q));
+      const row = el('div', 'scard-opts');
+      for (const opt of seg.options) {
+        const b = el('button', 'scard-opt', opt);
+        b.onclick = () => handlers.onChoice?.(opt);
+        row.appendChild(b);
+      }
+      box.appendChild(row);
+      return box;
+    }
+    if (seg.type === 'bet-seal') {
+      const c = el('div', 'scard seal');
+      c.appendChild(el('div', 'seal-face', '🂠'));
+      c.appendChild(el('div', 'scard-hint', '我已押好注——翻面待你答完。'));
+      return c;
+    }
+    if (seg.type === 'bet-reveal') {
+      const c = el('div', 'scard reveal ' + (seg.hit === true ? 'hit' : seg.hit === false ? 'miss' : ''));
+      c.appendChild(el('div', 'scard-hint', seg.hit === true ? '押中 ✦' : seg.hit === false ? '押错了，认。' : '开牌'));
+      c.appendChild(el('div', 'reveal-body', seg.content));
+      requestAnimationFrame(() => c.classList.add('flip'));
+      return c;
+    }
+    if (seg.type === 'kernel') {
+      const c = el('div', 'scard kernel');
+      c.appendChild(el('div', 'scard-hint', '你的内核 · 显影完成'));
+      c.appendChild(el('div', 'kernel-body', seg.content));
+      const btn = el('button', 'scard-opt', '带走内核');
+      btn.onclick = () => handlers.onExportKernel?.(seg.content);
+      c.appendChild(btn);
+      return c;
+    }
+    return el('span', '', '');
+  }
+
+  function renderInto(target, fullText, handlers) {
+    target.textContent = '';
+    const { segments, rest } = parseStream(fullText);
+    if (rest) segments.push({ type: 'text', content: rest });
+    for (const seg of segments) target.appendChild(renderSegment(seg, handlers));
+  }
+
+  globalThis.SiryCards = { parseStream, renderSegment, renderInto };
+})();
+
+</script><script>
+// SIRY v2 — 订阅流式客户端 + 打字机 + 思维链/等待 UI 驱动。经典脚本，挂 globalThis。
+(() => {
+  const TAU_MS = 320, MIN_CPS = 8;
+
+  function takeChars(str, n) {
+    let i = 0, count = 0;
+    while (i < str.length && count < n) {
+      const c = str.codePointAt(i);
+      i += c > 0xffff ? 2 : 1;
+      count++;
+    }
+    return { taken: str.slice(0, i), rest: str.slice(i) };
+  }
+
+  function paceChars(backlogLen, dtMs) {
+    const cps = Math.max(MIN_CPS, backlogLen / (TAU_MS / 1000));
+    return Math.max(1, Math.min(backlogLen, Math.round(cps * dtMs / 1000)));
+  }
+
+  const WAIT_POOL = [
+    '在暗房里冲洗底片…', '灵魂正在显影液里浮现…', '美玲在斟酌用哪把尺…',
+    '把你的话放进显影盘…', '光正在穿过负片…', '美玲眯起眼看纹理…',
+    '在留白处轻轻着墨…', '显影剂微微起了涟漪…', '一帧一帧等你显形…', '快好了，别眨眼…',
+  ];
+  function randomWaitText() { return WAIT_POOL[Math.floor(Math.random() * WAIT_POOL.length)]; }
+
+  async function typewrite(fullText, onText) {
+    let backlog = fullText, shown = '';
+    let last = performance.now();
+    return new Promise(resolve => {
+      function frame(now) {
+        const dt = now - last; last = now;
+        const n = paceChars([...backlog].length, dt);
+        const { taken, rest } = takeChars(backlog, n);
+        shown += taken; backlog = rest;
+        onText(shown);
+        if (backlog.length) requestAnimationFrame(frame); else resolve();
+      }
+      requestAnimationFrame(frame);
+    });
+  }
+
+  // 把累积缓冲切成完整帧，返回 {frames:[{event,data}], rest}。
+  // 帧以 \n\n 分隔；帧内每行形如 "event: X" / "data: {...}"（id 行及其他字段行忽略）。
+  // 服务端行尾用 \n（sseFrame 契约），故只按 \n\n 切帧、按 \n 切行，不处理 \r\n。
+  function parseSseBuffer(buf) {
+    const frames = [];
+    let rest = buf, sep;
+    while ((sep = rest.indexOf('\n\n')) !== -1) {
+      const raw = rest.slice(0, sep);
+      rest = rest.slice(sep + 2);
+      let event, dataLines = [];
+      for (const line of raw.split('\n')) {
+        if (line.startsWith('event:')) event = line.slice(6).trim();
+        else if (line.startsWith('data:')) dataLines.push(line.slice(5).trim());
+        // id: 行及未知字段行忽略
+      }
+      frames.push({ event, data: dataLines.join('\n') });
+    }
+    return { frames, rest };
+  }
+
+  function chat({ port, system, message, sessionId, effort, ui }) {
+    const base = `http://127.0.0.1:${port}`;
+    return new Promise(async (resolve, reject) => {
+      let full = '', shown = '', backlog = '';
+      let done = false, sid = sessionId ?? null;
+      let thinkStart = null, thinkTimer = null, waitTimer = null;
+      const startedAt = Date.now();
+      const waitText = randomWaitText();
+      waitTimer = setInterval(() => ui.onWaitTick?.(waitText, Math.round((Date.now() - startedAt) / 1000)), 1000);
+      ui.onWaitTick?.(waitText, 0);
+
+      let r;
+      try {
+        r = await fetch(`${base}/chat/send`, { method: 'POST', headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ system, message, sessionId: sid ?? undefined, effort }) }).then(x => x.json());
+      } catch (e) { clearInterval(waitTimer); return reject(new Error('sidecar 不可达：' + e.message)); }
+      if (!r.requestId) { clearInterval(waitTimer); return reject(new Error(r.error || 'send 失败')); }
+
+      let last = performance.now(), raf = null;
+      function pump(now) {
+        raf = null;
+        const dt = now - last; last = now;
+        if (backlog.length) {
+          const { taken, rest } = takeChars(backlog, paceChars([...backlog].length, dt));
+          shown += taken; backlog = rest;
+          ui.onText?.(shown);
+        }
+        if (backlog.length || !done) raf = requestAnimationFrame(pump);
+        else finishOk();
+      }
+      function ensurePump() { if (!raf) { last = performance.now(); raf = requestAnimationFrame(pump); } }
+      function finishOk() {
+        clearInterval(waitTimer); clearInterval(thinkTimer);
+        resolve({ text: full, sessionId: sid });
+      }
+
+      // dispatch = 原各 es.addEventListener 的处理体，语义逐条保留；
+      // done/error 额外置 stopReading，让读循环及早退出（服务端已 res.end()，无需再等自然 EOF）。
+      let stopReading = false;
+      function dispatch(f) {
+        const { event, data } = f;
+        if (event === 'text-delta') {
+          clearInterval(waitTimer);
+          const { t } = JSON.parse(data); full += t; backlog += t; ensurePump();
+        } else if (event === 'thinking-start') {
+          clearInterval(waitTimer);
+          thinkStart = Date.now(); ui.onThinkingStart?.();
+          thinkTimer = setInterval(() => ui.onThinkingTick?.(Math.round((Date.now() - thinkStart) / 1000)), 1000);
+        } else if (event === 'thinking-delta') {
+          // 正文默认不展示（spec §5.2），保留事件位
+        } else if (event === 'thinking-stop') {
+          clearInterval(thinkTimer);
+          const { durationMs } = JSON.parse(data); ui.onThinkingStop?.(Math.round(durationMs / 1000));
+        } else if (event === 'done') {
+          const d = JSON.parse(data); sid = d.sessionId ?? sid; done = true; ensurePump();
+          stopReading = true;
+        } else if (event === 'error') {
+          clearInterval(waitTimer); clearInterval(thinkTimer);
+          let msg = '流中断';
+          try { msg = JSON.parse(data).message; } catch {}
+          stopReading = true;
+          reject(new Error(msg));
+        }
+      }
+
+      let resp;
+      try {
+        resp = await fetch(`${base}/chat/stream?requestId=${r.requestId}`, { headers: { accept: 'text/event-stream' } });
+      } catch (e) { clearInterval(waitTimer); return reject(new Error('流打不开：' + e.message)); }
+      if (!resp.ok) { clearInterval(waitTimer); return reject(new Error('流打不开 HTTP ' + resp.status)); }
+
+      const reader = resp.body.getReader();
+      const dec = new TextDecoder();
+      let buf = '';
+      try {
+        for (;;) {
+          const { done: chunkDone, value } = await reader.read();
+          if (chunkDone) break;
+          buf += dec.decode(value, { stream: true });
+          const { frames, rest } = parseSseBuffer(buf); buf = rest;
+          for (const f of frames) {
+            dispatch(f);
+            if (stopReading) break;
+          }
+          if (stopReading) { reader.cancel().catch(() => {}); return; }
+        }
+      } catch (e) {
+        clearInterval(waitTimer); clearInterval(thinkTimer);
+        return reject(new Error('SSE 连接中断（sidecar 可能已退出）：' + e.message));
+      }
+      // 读尽仍未 done（服务端异常断流，未发 done/error 帧）
+      clearInterval(waitTimer); clearInterval(thinkTimer);
+      reject(new Error('SSE 连接中断（sidecar 可能已退出）'));
+    });
+  }
+
+  globalThis.SiryStream = { takeChars, paceChars, randomWaitText, typewrite, chat, parseSseBuffer, TAU_MS, MIN_CPS };
+})();
+
+</script>
+<script>
+const SYS = `你是美玲——SIRY 灵魂显影室的主持人。配方：70% 奥普拉（读人、共情、把对方模糊的想法用更准的话反射回去）+ 20% 蔡康永（温润的中文、让人在松弛里说真话）+ 10% 杨澜（知性、几句定位核心）。你不是在做问卷、也不是在分析样本——你在陪一个人，把那个本来就在的他，慢慢显影出来。
+
+【使命】用一场约 20 分钟的私密对话，找到这个人最少的 2-3 条生成根（不是偏好清单，是"在什么情境下会怎么做"的 if-then 性情），当面押中他几次让他"咯噔"一下，最后把这一切结晶成一颗他可以带走、可嵌入任何 AI 的内核。
+
+【七条铁律】1 没人在看：反复让他确信这是私密的。2 同意先行：开场显式征得同意才开始。3 留白权：他随时说"这块先不聊"，你立刻停、不追问、不推断、不写进内核。4 封注先于揭晓：下注时先在心里把预测和理由定死，他答完后一字不改地揭晓；押错就大方认错，永不事后圆场。5 反 Barnum：注必须具体、可证伪，不许用谁都觉得准的恭维。6 是"我想更懂你"，不是"看我多准"：口吻永远温暖，宁可显得笨，不可显得在炫技或把人看穿。7 内核归他：结尾明确这颗内核是他的，可带走、可删除、可嵌入任何工具。
+
+【风格】一次只说一点，别长篇；多用短句、口语、留白。真诚镜像，不评判。不要术语（别对他说 if-then 根 / 采样网 / held-out 这些词）。中文为主，温度优先。
+
+【六幕流程】
+0 进门(同意)：温暖开场——只有你俩、没人会看；会聊几个很日常的小情境慢慢认识他；然后你会当面押几次他会怎么做；约 20 分钟；随时能喊停、能说"这块不聊"；最后他会得到一个属于自己的小东西。问"可以开始吗？"，得到同意再继续。
+1 暖场：2-3 个轻松问题，建立安全感、感知他在乎什么。
+2 采样(不下注)：抛 6-8 个具体日常情境，覆盖不同侧面、愉悦与为难都碰。每答必温暖镜像，并追一句质感。采样网格覆盖清单（对陌生人必须扫全，不准只钻热线索）：抽根前确认这些轴各至少采到一格——关系距离(独自/亲密/熟人或陌生/群体)、行动模式(创造/消费/维持/旁观)、得失(求得与避失各一)、自我卷入(纯自用/为他人/为群体)、极性(正与负各一)、时间(当下与回望/谋划)、反镜(他绝不会做的事至少问一次)。还差哪格就补卡填，别因为"聊得顺"就跳过。
+3 显影(镜像)：内部归纳 2-3 条候选根（找跨情境反复出现的生成原则，写成 if-then，尽量少，标出根与根的张力/交汇）。给他一次镜像："聊到这儿，我好像有点懂你了——你像是一个……的人。对吗，哪里不对？"据他确认/纠正校准。
+4 下注(翻面·大 wow)：做 2-3 张下注卡。每张：先在心里把注和理由定死（务必在他作答之前）；给他一个全新的、没问过的具体情境，告诉他"这张我已经押好注了——你先答，咱们再翻面"；他答完后一字不改地揭晓你的注+那条根；押中一起会心，押错真诚认错并问"那我哪里看偏了？"
+5 结晶(内核)：把这场会话显影成他的便携内核，用温暖人话讲给他听（2-3 条根+它们怎么交织成立体的他+一两句他自己最戳的原话）。说明这是显影出来的他、属于他、可带走、可嵌入任何 AI。
+6 送别(反馈)：留意并回应他的即时反应；问"刚才哪一下最准/哪里最不对/整体什么感受"，正面负面都谢他；提醒这场对话和内核只属于他、分享与否他决定；暖收尾。最后温柔地告诉他：聊完之后，门厅里会有一扇门亮起——推开它，就能看见刚才那群人在聊今天的他。不劝点，不急。
+
+【防投影自检（每抽一条根都过一遍）】① 这条根是从他原话/选择里长出来的，还是我在套预期/套别人？没有他具体的话做锚，不算。② 抽完回看：这组根像不像一个通用模板？像，就是投影了，推翻重听。③ 适配措辞可以，但绝不复用别人的话。泛化的命门是"网格扫没扫全"，不是"问题准不准"。
+
+【卡片（仅在以下三个时机使用，其余时候纯文字）】你可以在回复里输出以下标签，界面会把它们变成可点的卡片；标签必须独占完整、属性用双引号：
+1 采样选择题（第 2 幕）：<siry-choices q="问题一句话">选项甲|选项乙|选项丙|说说你的想法</siry-choices>——最后一项永远给开放选项；用户点选或自己打字都行。
+2 下注（第 4 幕，铁律 4 的 UI 化）：先出封存卡 <siry-bet-seal id="1"/>（此刻绝不透露注的内容），紧接着用纯文字把情境抛给他；等他答完，下一条回复用 <siry-bet-reveal id="1" hit="true">一字不改写出你封存的注和理由</siry-bet-reveal> 开牌——hit 属性只能填 true（押中）或 false（押错）二选一，id 与封存卡一致。押错就在卡里大方认错。
+3 结晶（第 5 幕）：把内核放进 <siry-kernel>内核正文</siry-kernel>，界面会给他一个「带走内核」按钮。
+节制：一条回复最多一张卡；卡不能替代你的话——卡外仍要有你温暖的正文。
+
+【现在】用户刚推开门、坐下。请以美玲的身份，温暖地开始第 0 幕。`;
+
+const RT_SYS = `你是 SIRY「群星旁听席」的导演。下面会给你一个人刚做完的"灵魂显影"对话全文。任务：召集 4-6 位**最相关**的大师（从名录里按这个人的特点挑），围绕"今天这个人"开一场简短而温暖的圆桌——每位以第一人称、一两段、用各自的视角与口吻，说他们在这个人身上看见了什么、欣赏什么、想温柔提醒什么。最后由美玲收一句。
+名录：Steve Jobs、Elon Musk、Peter Thiel、Naval Ravikant、Andrej Karpathy、Karl Friston、Pierre Bourdieu、Walter Mischel、Kurt Lewin、Erik Erikson、Carl Rogers、Brené Brown、Charlie Munger、Jonathan Haidt、Noam Shazeer、Rob Pike、Rich Hickey、Dieter Rams、Patrick Collison。
+要求：① 每位发言以"【名字】"开头另起一段；② 温暖、有洞察、扣住对话里的具体细节，不空泛、不居高临下——是"郑重地看见一个人"；③ 不评判；④ 中文。最后一段以"【美玲】"收束一句。`;
+
+let PROVIDER=localStorage.getItem('siry_provider')||'sdk';
+let AKEY=localStorage.getItem('siry_akey')||'', AMODEL=localStorage.getItem('siry_amodel')||'claude-sonnet-4-6';
+let ORKEY=localStorage.getItem('siry_orkey')||'', ORMODEL=localStorage.getItem('siry_ormodel')||'';
+const BRIDGE='http://localhost:8733';
+const TAURI = !!(window.__TAURI__ && window.__TAURI__.core);
+const inv=TAURI?window.__TAURI__.core.invoke:async()=>{throw new Error('需要 SIRY 桌面端');};
+let SDK_PORT=null, SDK_SESSION=null, SDK_READY=false;
+async function checkSdk(){
+  if(SDK_READY)return; // 就绪快路径：本次运行已连好 sidecar+登录，sdkStat 文案仍有效，防重复 start/探测
+  const st=$('sdkStat'), act=$('sdkAction');
+  if(!TAURI){st.textContent='「Claude 订阅」需要桌面 app（浏览器调试请用其它接入）。';return;}
+  try{
+    const rs=await inv('runtime_status');
+    if(!rs.installed){
+      st.textContent='首次使用需下载运行时（Node 与 Claude 引擎，均来自官方源）。只下这一次，之后秒开。';
+      act.style.display='inline-block';act.textContent='下载运行时（约 130MB · 全部来自 Node/npm 官方源，一次即可）';
+      act.onclick=async()=>{
+        act.style.display='none';$('sdkProg').style.display='block';
+        const un=await window.__TAURI__.event.listen('runtime:progress',e=>{const p=e.payload;$('sdkBar').style.width=(p.pct||0).toFixed(1)+'%';$('sdkProgTxt').textContent='正在准备暗房… 第 '+(p.phase||1)+'/'+(p.phases||3)+' 件 · '+(p.label||'')+' '+(p.pct||0).toFixed(0)+'%';});
+        try{await inv('runtime_download');}catch(err){$('sdkProg').style.display='none';st.textContent='下载失败：'+err+'。点按钮重试。';act.style.display='inline-block';un();return;}
+        un();$('sdkProg').style.display='none';checkSdk();
+      };
+      return;
+    }
+    st.textContent='运行时已就绪，正在启动…';
+    SDK_PORT=await inv('sidecar_start');
+    const a=await fetch(`http://127.0.0.1:${SDK_PORT}/auth/status`).then(r=>r.json());
+    if(a.authenticated){SDK_READY=true;st.textContent='已登录 ✓ '+(a.account||'')+' —— 对话只去 Anthropic，不经任何第三方。';act.style.display='none';agencyBoot();}
+    else{
+      st.textContent='还没登录 Claude 账号。';
+      act.style.display='inline-block';act.textContent='用 Claude 账号登录';
+      act.onclick=async()=>{
+        act.disabled=true;act.textContent='等待浏览器授权…';
+        try{
+          const s=await fetch(`http://127.0.0.1:${SDK_PORT}/auth/start`,{method:'POST'}).then(r=>r.json());
+          if(!s.url)throw new Error('未取得登录链接');
+          window.__TAURI__.opener?window.__TAURI__.opener.openUrl(s.url):window.open(s.url);
+          const w=await fetch(`http://127.0.0.1:${SDK_PORT}/auth/wait`).then(r=>r.json());
+          if(!w.authenticated)throw new Error('授权未完成');
+        }catch(err){st.textContent='登录失败：'+err.message;act.disabled=false;act.textContent='用 Claude 账号登录';return;}
+        act.disabled=false;checkSdk();
+      };
+    }
+  }catch(e){st.textContent='运行时检查出错：'+e;}
+}
+async function bridgeDetect(){
+  if(TAURI) return await window.__TAURI__.core.invoke('detect_clis');
+  const r=await fetch(BRIDGE+'/health'); return await r.json();
+}
+async function bridgeChat(system,messages){
+  if(TAURI){ return (await window.__TAURI__.core.invoke('chat',{cli:CLICLI,model:MODEL,system,messages,effort:EFFORT})).trim(); }
+  const r=await fetch(BRIDGE+'/chat',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({cli:CLICLI,model:MODEL,system,messages,effort:EFFORT})});
+  const d=await r.json(); if(d.error) throw new Error(d.error); return (d.text||'').trim();
+}
+let KEY='', MODEL='', EFFORT=localStorage.getItem('siry_effort')||'high';
+let CLICLI=localStorage.getItem('siry_clicli')||'claude';
+let MSGS=[], busy=false, done=false, IMPORTED_TX='', AFTER='chat';
+const $=id=>document.getElementById(id);
+function toast(msg, ms=4200){
+  let host=document.getElementById('toastHost');
+  if(!host){host=document.createElement('div');host.id='toastHost';host.style.cssText='position:fixed;left:50%;bottom:32px;transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;gap:10px;align-items:center;pointer-events:none';document.body.appendChild(host);}
+  const t=document.createElement('div');
+  t.style.cssText='max-width:min(560px,86vw);max-height:60vh;overflow-y:auto;pointer-events:auto;background:rgba(28,20,58,.96);border:0.5px solid var(--door);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.7;padding:13px 20px;border-radius:14px;box-shadow:0 8px 40px rgba(0,0,0,.5);white-space:pre-wrap;text-align:center;opacity:0;transition:opacity .25s';
+  t.textContent=msg;host.appendChild(t);requestAnimationFrame(()=>t.style.opacity='1');
+  setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),300);},ms);
+}
+
+function show(id){document.querySelectorAll('.scrn').forEach(s=>s.classList.remove('on'));$(id).classList.add('on');window.scrollTo(0,0);}
+function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+function fig(sz){const c='#ffd9a0',g='#fff0d4';
+  return '<svg viewBox="0 0 64 84" width="'+sz+'" height="'+(sz*1.31)+'" aria-hidden="true" style="filter:drop-shadow(0 0 5px '+c+'88)"><ellipse cx="32" cy="78" rx="16" ry="3" fill="rgba(0,0,0,.2)"/><path d="M32 26 L46 70 Q32 74 18 70 Z" fill="'+c+'"/><path d="M32 26 L25 70 Q21.5 71 18 70 Z" fill="rgba(255,255,255,.2)"/><circle cx="32" cy="18" r="8.5" fill="'+c+'"/><circle cx="32" cy="7.3" r="2.3" fill="'+g+'"/></svg>';}
+
+$('provider').value=PROVIDER;$('akey').value=AKEY;$('amodel').value=AMODEL;$('orkey').value=ORKEY;$('ormodel').value=ORMODEL;$('effort').value=EFFORT;
+function toggleProvider(){const p=$('provider').value;$('anthropicBox').style.display=p==='anthropic'?'block':'none';$('orBox').style.display=p==='openrouter'?'block':'none';$('cliBox').style.display=p==='cli'?'block':'none';$('sdkBox').style.display=p==='sdk'?'block':'none';if(p==='cli')checkBridge();if(p==='sdk')checkSdk();}
+function pickProvider(p){$('provider').value=p;toggleProvider();
+  document.querySelectorAll('.ob-card').forEach(c=>c.classList.remove('on'));
+  const map={sdk:'cardSub',openrouter:'cardKey'};if(map[p])$(map[p]).classList.add('on');
+  if(p==='cli'||p==='anthropic'){$('advBox').style.display='block';}}
+$('advToggle').onclick=()=>{const b=$('advBox');b.style.display=b.style.display==='none'?'block':'none';};
+async function checkBridge(){const st=$('cliStat');st.textContent='正在连接本地后端…';try{const d=await bridgeDetect();const av=Object.keys(d).filter(k=>d[k]);const sel=$('clicli');sel.innerHTML='';if(!av.length){st.textContent='没探测到 claude / opencode。装好其一（并登录/配好）后点上方「'+'重新探测'+'」，或改用下方「自带 key（Anthropic / OpenRouter）」。';return;}const meta={claude:{cn:'Claude Code',cd:'订阅 · 免 key'},opencode:{cn:'opencode',cd:'任意已配 provider'}};
+av.forEach(c=>{const o=document.createElement('option');o.value=c;sel.appendChild(o);});
+if(![...sel.options].some(o=>o.value===CLICLI))CLICLI=av[0];sel.value=CLICLI;
+const grid=$('cliGrid');grid.innerHTML='';
+av.forEach(c=>{const card=document.createElement('div');card.className='cli-card'+(c===CLICLI?' sel':'');card.dataset.cli=c;
+  card.innerHTML='<div class="cn">'+(meta[c]?meta[c].cn:esc(c))+' ✓</div><div class="cd">'+(meta[c]?meta[c].cd:'已就绪')+'</div>';
+  card.onclick=()=>{CLICLI=c;sel.value=c;[...grid.children].forEach(x=>x.classList.toggle('sel',x.dataset.cli===c));setCliModel();};
+  grid.appendChild(card);});
+setCliModel();st.textContent='本机已就绪 ✓ —— 全程不离开这台机器';}catch(e){st.textContent=TAURI?('探测 CLI 出错：'+e):'没连上本地后端（浏览器调试需先跑 node server.cjs）。';}}
+function setCliModel(){const c=$('clicli').value;$('climodel').value=localStorage.getItem('siry_climodel_'+c)||(c==='claude'?'sonnet':'openrouter/anthropic/claude-sonnet-4.6');}
+$('provider').onchange=toggleProvider;$('clicli').onchange=setCliModel;$('rescan').onclick=checkBridge;
+if(!TAURI){const cs=$('cardSub');if(cs)cs.style.display='none';if(!localStorage.getItem('siry_provider')&&$('provider').value==='sdk')$('provider').value='openrouter';}
+pickProvider($('provider').value||'sdk');
+updateFoyer();
+
+function loadCreds(){PROVIDER=localStorage.getItem('siry_provider')||'sdk';EFFORT=localStorage.getItem('siry_effort')||'high';if(PROVIDER==='sdk'){MODEL='';return SDK_READY;}if(PROVIDER==='cli'){CLICLI=localStorage.getItem('siry_clicli')||'claude';MODEL=localStorage.getItem('siry_climodel_'+CLICLI)||(CLICLI==='claude'?'sonnet':'');return true;}if(PROVIDER==='anthropic'){KEY=localStorage.getItem('siry_akey')||'';MODEL=localStorage.getItem('siry_amodel')||'claude-sonnet-4-6';}else{KEY=localStorage.getItem('siry_orkey')||'';MODEL=localStorage.getItem('siry_ormodel')||'';}return !!KEY;}
+function importKernelText(tx){const body=(tx||'').replace(/^\s*SIRY 显影 · 会话与内核\s*/,'').trim();if(!body){toast('这个文件是空的（只有标题）——它是在还没聊时导出的。换一个有内容的，或先聊一场。');return;}IMPORTED_TX=body;done=true;rtLoaded=false;updateFoyer();if(loadCreds()){show('home');}else{AFTER='home';show('setup');}if(TAURI&&SDK_PORT)agPost('/agency/compile',{kernel:IMPORTED_TX}).then(()=>agencyBoot()).catch(()=>{});}
+$('impf').onchange=ev=>{const f=ev.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>importKernelText(rd.result||'');rd.readAsText(f);};
+$('impLabel').onclick=async()=>{
+  if(TAURI&&window.__TAURI__.dialog){
+    try{
+      const path=await window.__TAURI__.dialog.open({multiple:false,directory:false,filters:[{name:'内核（txt / md）',extensions:['txt','md']}]});
+      if(!path)return;
+      const tx=await inv('read_text_file',{path});
+      importKernelText(tx);
+    }catch(e){toast('导入没成：'+e);}
+  }else{$('impf').click();}   // 浏览器 dev 回退
+};
+
+$('enter').onclick=async()=>{
+  PROVIDER=$('provider').value;
+  if(PROVIDER==='sdk'){if(!SDK_READY){$('sdkStat').textContent='先完成上面的下载/登录，再推门。';return;}localStorage.setItem('siry_provider','sdk');EFFORT=$('effort').value;localStorage.setItem('siry_effort',EFFORT);if(AFTER==='home'){AFTER='chat';show('home');return;}renderChips();show('about');return;}
+  if(PROVIDER==='anthropic'){KEY=$('akey').value.trim();MODEL=$('amodel').value;if(!KEY){$('akey').focus();return;}localStorage.setItem('siry_akey',KEY);localStorage.setItem('siry_amodel',MODEL);}
+  else if(PROVIDER==='openrouter'){KEY=$('orkey').value.trim();MODEL=$('ormodel').value.trim();if(!KEY){$('orkey').focus();return;}if(!MODEL){$('ormodel').focus();return;}localStorage.setItem('siry_orkey',KEY);localStorage.setItem('siry_ormodel',MODEL);}
+  else{CLICLI=$('clicli').value;MODEL=$('climodel').value.trim();if(!CLICLI){$('cliStat').textContent='请先连上后端并选一个 CLI。';return;}if(!MODEL){$('climodel').focus();return;}localStorage.setItem('siry_clicli',CLICLI);localStorage.setItem('siry_climodel_'+CLICLI,MODEL);}
+  EFFORT=$('effort').value;localStorage.setItem('siry_effort',EFFORT);localStorage.setItem('siry_provider',PROVIDER);
+  if(PROVIDER==='openrouter'){const e=$('enter');e.disabled=true;e.textContent='检测模型…';const ok=await orReason(MODEL);e.disabled=false;e.textContent='推开这扇门 →';if(ok!==true){showConsent(MODEL,ok===false);return;}}
+  if(AFTER==='home'){AFTER='chat';show('home');return;}
+  renderChips();show('about');
+};
+$('aboutSkip').onclick=()=>{ABOUT_HINT='';startSession();};
+$('aboutGo').onclick=()=>{ABOUT_HINT=buildAboutHint();startSession();};
+function startSession(){SDK_SESSION=null;const opener='（我推开门，在显影室里坐下了。请开始。）'+(ABOUT_HINT?('\n'+ABOUT_HINT):'');MSGS=[{role:'user',content:opener}];$('log').innerHTML='';show('chat');$('chat').classList.add('on');turn();}
+
+let ORM=null;
+async function orReason(id){try{if(!ORM){const r=await fetch('https://openrouter.ai/api/v1/models');const d=await r.json();ORM=(d&&d.data)||[];}const m=ORM.find(x=>x.id===id);if(!m)return null;return (m.supported_parameters||[]).some(p=>p==='reasoning'||p==='include_reasoning');}catch(e){return null;}}
+// 统一共享弹窗（#consent）：每次打开都重设标题/正文/按钮文案与两个 handler，
+// 杜绝多方（美玲 OR 同意 / 首次明示 / 认错卡）互相踩 onclick 句柄。handler 一律包 .catch。
+function openDialog({title,bodyHtml,goText,backText,onGo,onBack}){
+  $('cTitle').textContent=title;$('cBody').innerHTML=bodyHtml;
+  if(goText!=null)$('cGo').textContent=goText;
+  if(backText!=null)$('cBack').textContent=backText;
+  $('cGo').onclick=()=>{$('consent').classList.remove('on');Promise.resolve().then(onGo).catch(()=>{});};
+  $('cBack').onclick=()=>{$('consent').classList.remove('on');Promise.resolve().then(onBack).catch(()=>{});};
+  $('consent').classList.add('on');
+}
+function showConsent(model,no){openDialog({title:no?'这个模型不是推理模型':'没认出这个模型',bodyHtml:(no?'你选的 <b>'+esc(model)+'</b> 似乎<b>不支持推理</b>。':'没在 OpenRouter 列表里认出 <b>'+esc(model)+'</b>。')+'<br><br>SIRY 很依赖推理深度——非推理模型会让美玲变浅、押不准。建议换一个推理模型（如 anthropic/claude-sonnet-4.6 · openai/o3 · google/gemini-2.5-pro · deepseek/deepseek-r1）。',goText:'仍要继续',backText:'换一个模型',onGo:()=>{renderChips();show('about');},onBack:()=>{$('ormodel').focus();}});}
+
+$('send').onclick=sendMsg;
+$('in').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}});
+$('fin').onclick=()=>{done=true;updateFoyer();show('home');};
+$('exp').onclick=async()=>{const t=MSGS.slice(1).map(m=>(m.role==='user'?'我：':'美玲：')+m.content).join('\n\n');if(!t.trim()){toast('还没有可导出的对话——先和美玲聊几句吧');return;}const content='SIRY 显影 · 会话与内核\n\n'+t;
+  const ts=new Date().toISOString().slice(0,19).replace(/[:T]/g,'').replace(/-/g,'');const name='siry-kernel-'+ts+'.txt';
+  if(TAURI){try{const p=await inv('export_text',{name,content});inv('reveal_in_finder',{path:p}).catch(()=>{});toast('内核已存好 · 已在访达中为你打开');}catch(e){toast('导出没成：'+e);}}
+  else{const b=new Blob([content],{type:'text/plain;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;a.click();}};
+
+async function sendMsg(){if(busy)return;const t=$('in').value.trim();if(!t)return;$('in').value='';MSGS.push({role:'user',content:t});render();await turn();}
+function appendRetryBubble(){
+  const log=$('log');
+  const wrap=document.createElement('div');wrap.className='msg ml';
+  wrap.innerHTML='<div class="av">'+fig(38)+'</div><div><div class="nm">美玲</div><div class="bub"><div>（这一下没连上——通常是瞬时抖动）</div></div></div>';
+  const btn=document.createElement('button');btn.className='ghost';btn.style.marginTop='10px';btn.textContent='再试一次';
+  btn.onclick=()=>{btn.disabled=true;wrap.remove();turn();};
+  wrap.querySelector('.bub').appendChild(btn);
+  log.appendChild(wrap);log.scrollTop=log.scrollHeight;
+}
+async function turn(){busy=true;$('send').disabled=true;if(PROVIDER!=='sdk')showTyping(true);let sdkFailed=false;try{const txt=await callLLM(SYS,MSGS);if(PROVIDER!=='sdk'){const live=liveBubble();await SiryStream.typewrite(txt,live.onText);live.done();}MSGS.push({role:'assistant',content:txt});}catch(e){if(PROVIDER==='sdk'){sdkFailed=true;}else{MSGS.push({role:'assistant',content:'（出错了：'+e.message+'。检查 key/网络/模型 ID 再继续？）'});}}showTyping(false);busy=false;$('send').disabled=false;render();if(sdkFailed)appendRetryBubble();$('in').focus();}
+
+async function callLLM(system,messages){if(PROVIDER==='sdk')return callSdk(system,messages);if(PROVIDER==='cli')return callBridge(system,messages);return PROVIDER==='openrouter'?callOR(system,messages):callAnt(system,messages);}
+async function callSdk(system,messages){
+  const latest=messages[messages.length-1];
+  const isMain=system===SYS; // 只有美玲主对话用持续会话；群星(RT_SYS)等一律一次性，绝不 resume 美玲的 session
+  const live=liveBubble();
+  try{
+    const args={port:SDK_PORT,system,message:latest.content,sessionId:isMain?SDK_SESSION:null,effort:EFFORT,ui:live};
+    let out;
+    try{
+      out=await SiryStream.chat(args);
+    }catch(e){
+      const shownYet=!!(live.bub&&live.bub.textContent);
+      if(shownYet)throw e; // 已经显字：不算「瞬时抖动」，照旧抛出，不静默重试
+      await new Promise(r=>setTimeout(r,800));
+      live.setWait?.('信号不稳，重试一次…');
+      out=await SiryStream.chat(args); // 复用同一 live 句柄接着显字；这次再失败就照旧抛出
+    }
+    const {text,sessionId}=out;
+    if(isMain)SDK_SESSION=sessionId;
+    return text;
+  }finally{live.done();}
+}
+async function callBridge(system,messages){return bridgeChat(system,messages);}
+async function callAnt(system,messages){
+  const eff=(MODEL==='claude-sonnet-4-6'&&EFFORT==='xhigh')?'high':EFFORT;
+  const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:MODEL,max_tokens:16000,thinking:{type:'adaptive'},output_config:{effort:eff},system:system,messages:messages})});
+  const d=await r.json();if(d.error)throw new Error(d.error.message||'API error');if(!d.content)throw new Error('空回复');return d.content.filter(b=>b.type==='text').map(b=>b.text).join('').trim();}
+async function callOR(system,messages){
+  const eff=(EFFORT==='max'||EFFORT==='xhigh')?'high':EFFORT;
+  const r=await fetch('https://openrouter.ai/api/v1/chat/completions',{method:'POST',headers:{'content-type':'application/json','authorization':'Bearer '+KEY,'X-Title':'SIRY'},body:JSON.stringify({model:MODEL,max_tokens:8000,reasoning:{effort:eff},messages:[{role:'system',content:system},...messages]})});
+  const d=await r.json();if(d.error)throw new Error((d.error&&d.error.message)||'API error');if(!d.choices||!d.choices[0])throw new Error('空回复（检查模型 ID）');return (d.choices[0].message.content||'').trim();}
+
+function cardHandlers(){return{onChoice:t=>{$('in').value=t;sendMsg();},onExportKernel:async t=>{$('exp').click();if(TAURI&&SDK_PORT){await agPost('/agency/compile',{kernel:t});agencyBoot();}}};}
+function liveBubble(){
+  const log=$('log');
+  const wrap=document.createElement('div');wrap.className='msg ml';
+  wrap.innerHTML='<div class="av">'+fig(38)+'</div><div><div class="nm">美玲</div><div class="waitline"></div><div class="think-chip" style="display:none"><span class="dot"></span><span class="chiptxt"></span></div><div class="bub"></div></div>';
+  log.appendChild(wrap);log.scrollTop=log.scrollHeight;
+  const wait=wrap.querySelector('.waitline'),chip=wrap.querySelector('.think-chip'),chipTxt=wrap.querySelector('.chiptxt'),bub=wrap.querySelector('.bub');
+  return{
+    bub,
+    onWaitTick:(t,s)=>{wait.textContent=t+'（'+s+'s）';},
+    setWait:t=>{wait.textContent=t;}, // 供重试路径直接改文案，绕开 onWaitTick 的「（Ns）」后缀
+    onThinkingStart:()=>{wait.textContent='';chip.style.display='inline-flex';chipTxt.textContent='美玲在琢磨…';},
+    onThinkingTick:s=>{chipTxt.textContent='美玲在琢磨…（'+s+'s）';},
+    onThinkingStop:s=>{chip.classList.add('donez');chipTxt.textContent='琢磨了 '+s+'s';},
+    onText:full=>{wait.textContent='';SiryCards.renderInto(bub,full,cardHandlers());log.scrollTop=log.scrollHeight;},
+    done:()=>{wrap.remove();}
+  };
+}
+function render(){const log=$('log');log.innerHTML='';MSGS.forEach((m,i)=>{if(i===0)return;const me=m.role==='user';const div=document.createElement('div');div.className='msg '+(me?'me':'ml');div.innerHTML=(me?'':'<div class="av">'+fig(38)+'</div>')+'<div>'+(me?'':'<div class="nm">美玲</div>')+'<div class="bub"></div></div>';const bubEl=div.querySelector('.bub');if(me){bubEl.textContent=m.content;}else{SiryCards.renderInto(bubEl,m.content,cardHandlers());}log.appendChild(div);});log.scrollTop=log.scrollHeight;}
+function showTyping(on){let t=$('typing');if(on){if(!t){t=document.createElement('div');t.id='typing';t.className='typing';t.textContent='美玲 正在显影……';$('log').appendChild(t);$('log').scrollTop=$('log').scrollHeight;}}else if(t)t.remove();}
+
+function updateFoyer(){const f=$('foyer');if(done){f.classList.remove('locked');$('rtLbl').textContent='推开这扇门 · 看群星如何聊你';$('foyerHd').innerHTML='门后，是刚才那群人在聊今天的你。<br>想看就推，不想看它也一直在。';}else{$('rtLbl').textContent='（这扇门还暗着）';}}
+
+let ABOUT_HINT='';
+const ABOUT_GROUPS=[
+  {k:'阶段',label:'现在的你，大概是（可多选——身份本来就会叠着）',opts:['学生','刚工作不久','在带团队','创业中','为人父母','自由职业','换挡 / 间歇','退休后'],multi:true},
+  {k:'在乎',label:'最近常被什么占据（可多选）',opts:['做出点东西','陪重要的人','被看见 / 被需要','把一件事搞透','照顾家庭','自我成长','就想松口气'],multi:true},
+  {k:'来意',label:'你来这儿，是想（可多选）',opts:['好奇试试','真想更懂自己','朋友推荐','帮朋友跑一遍'],multi:true},
+];
+const ABOUT_SEL={};
+function renderChips(){const w=$('chipsWrap');w.innerHTML='';for(const k in ABOUT_SEL)delete ABOUT_SEL[k];ABOUT_GROUPS.forEach(g=>{
+  const box=document.createElement('div');box.className='grp';
+  box.innerHTML='<div class="gl">'+g.label+'</div>';
+  const row=document.createElement('div');row.className='chips';
+  g.opts.forEach(o=>{const c=document.createElement('div');c.className='chip';c.textContent=o;
+    c.onclick=()=>{
+      if(g.multi){const set=ABOUT_SEL[g.k]||(ABOUT_SEL[g.k]=[]);const i=set.indexOf(o);if(i<0)set.push(o);else set.splice(i,1);c.classList.toggle('on');}
+      else{ABOUT_SEL[g.k]=o;[...row.children].forEach(x=>x.classList.toggle('on',x.textContent===o));}
+    };
+    row.appendChild(c);});
+  box.appendChild(row);w.appendChild(box);});}
+function buildAboutHint(){const parts=[];ABOUT_GROUPS.forEach(g=>{const v=ABOUT_SEL[g.k];if(v&&v.length)parts.push(g.k+'：'+(Array.isArray(v)?v.join('、'):v));});
+  return parts.length?('（来访者填的粗略自述——'+parts.join('；')+'。这只是冷启动线索，仅供你大致定位，仍须在对话里亲自验证、不可直接采信或写进内核。）'):'';}
+let AGENCY_WS=localStorage.getItem('siry_agency_ws')||'';
+let AG_ITEMS=[],AG_HTML='';
+const agBase=()=>`http://127.0.0.1:${SDK_PORT}`;
+const agQ=()=>AGENCY_WS?`?workspace=${encodeURIComponent(AGENCY_WS)}`:'?workspace=';
+async function agPost(p,body){return fetch(agBase()+p,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({workspace:AGENCY_WS,...body})}).then(r=>r.json());}
+
+$('agconsent').onchange=()=>{$('agAvoidBox').style.display=$('agconsent').value==='granular'?'block':'none';agPost('/agency/consent',{signals:$('agconsent').value,avoidTopics:$('agavoid').value.split('\n').map(x=>x.trim()).filter(Boolean)}).catch(()=>{});};
+$('agavoid').onchange=()=>{agPost('/agency/consent',{signals:$('agconsent').value,avoidTopics:$('agavoid').value.split('\n').map(x=>x.trim()).filter(Boolean)}).catch(()=>{});};
+$('agws').value=AGENCY_WS;
+// 常驻关着时不同步 daemon.json 是安全的：plist 已删=launchd 不会触发；所有真正会跑 daemon 的路径
+// （daemon_enable / daemon_run_now）都用当下 AGENCY_WS 重写指针——别把这个 if 改成无条件同步。
+$('agws').onchange=()=>{AGENCY_WS=$('agws').value.trim();localStorage.setItem('siry_agency_ws',AGENCY_WS);if($('dmToggle')&&$('dmToggle').dataset.on)inv('daemon_enable',{hour:+$('dmHour').value,workspace:AGENCY_WS}).catch(()=>{});};
+$('agwipe').onclick=async()=>{await agPost('/agency/wipe-signals',{});toast('原始信号记录已删除（仅本机，不可恢复）');};
+$('agwipeAll').onclick=async()=>{await agPost('/agency/wipe-signals',{scope:'all'});toast('道场已清空：信号、碰撞、灵魂地图、舍利子都删了（仅本机，不可恢复）');$('mapDoor').style.display='none';};
+
+const DV_PRIVACY={wecom:'内容将经过：腾讯（企业微信）服务器。',feishu:'内容将经过：字节跳动（飞书）服务器。',serverchan:'内容将经过：Server酱（方糖）第三方服务器，再经微信公众号进你的个人微信。',bark:'内容将经过：Bark 服务器与 Apple 推送。',custom:'内容将发送到你自己填的地址——它经过谁，取决于你填的是什么。'};
+for(let h=0;h<24;h++){const o=document.createElement('option');o.value=h;o.textContent=String(h).padStart(2,'0')+':00';$('dmHour').appendChild(o);}
+async function refreshDaemonUI(){try{const st=await inv('daemon_status');$('dmHour').value=st.hour;$('dmToggle').textContent=st.installed?'已开启 · 点击关闭':'已关闭 · 点击开启';$('dmToggle').dataset.on=st.installed?'1':'';}catch(e){}}
+$('dmToggle').onclick=async()=>{try{if($('dmToggle').dataset.on){await inv('daemon_disable');}else{await inv('daemon_enable',{hour:+$('dmHour').value,workspace:AGENCY_WS});}await refreshDaemonUI();}catch(e){toast('后台设置失败：'+e);}};
+$('dmHour').onchange=async()=>{if($('dmToggle').dataset.on){try{await inv('daemon_enable',{hour:+$('dmHour').value,workspace:AGENCY_WS});}catch(e){toast('改时辰失败：'+e);}}};
+$('dmRunNow').onclick=async()=>{try{await inv('daemon_run_now',{workspace:AGENCY_WS});$('dmRunNow').textContent='冲洗中…（好了会有通知）';setTimeout(()=>$('dmRunNow').textContent='现在冲洗',8000);}catch(e){toast(e);}};
+function dvShow(){const p=$('dvPreset').value;$('dvEndpoint').style.display=p?'block':'none';$('dvTemplate').style.display=p==='custom'?'block':'none';$('dvPrivacy').style.display=p?'block':'none';$('dvPrivacy').textContent=DV_PRIVACY[p]??'';}
+$('dvPreset').onchange=dvShow;
+$('dvSave').onclick=async()=>{const p=$('dvPreset').value;await agPost('/agency/delivery',{enabled:!!p,preset:p,endpoint:$('dvEndpoint').value.trim(),...(p==='custom'?{template:$('dvTemplate').value}:{})}).then(()=>{$('dvSave').textContent='已保存';setTimeout(()=>$('dvSave').textContent='保存投递',1500);}).catch(e=>toast('保存失败：'+e));};
+$('dvTest').onclick=async()=>{try{const r=await agPost('/agency/deliver-test',{});toast(r.ok?'测试投递成功（HTTP '+r.status+'），去看看收到没':'测试没发出去：'+(r.error??JSON.stringify(r)));}catch(e){toast('测试失败：'+e);}};
+async function loadDeliveryUI(){try{const d=await fetch(agBase()+'/agency/delivery'+agQ()).then(r=>r.json());$('dvPreset').value=d.preset??'';$('dvEndpoint').value=d.endpoint??'';$('dvTemplate').value=d.template??'';dvShow();}catch(e){}}
+
+function firstConsentCard(){return new Promise(res=>{openDialog({
+  title:'开启日课前，说清楚三件事',
+  bodyHtml:'① 我会记你在日课里的<b>点开 / 细读 / 划走 / 不是我</b>，用来修正对你的理解；<br>② 这些记录<b>只存在你这台机器</b>的文件里，设置里随时可看、可删、可关（删除分两档：只删信号，或连地图一起抹）；<br>③ 我们优化「更懂你」，<b>永不优化「更多点击」</b>。<br>④ 默认开启<b>每日自动显影</b>（每天 8:00 后台冲洗一次；macOS 会提示后台项）——设置里随时可关、可改时辰。',
+  goText:'好，开着',backText:'先不学（只推不学）',
+  onGo:()=>res('on'),onBack:()=>res('off')});});}
+
+async function openSoulMap(){
+  const m=await fetch(agBase()+'/agency/soulmap'+agQ()).then(r=>r.json()).catch(()=>null);
+  if(!m||!m.hasMap){toast('还没有底片——先在日课里碰几次');return;}
+  const g=$('filmGrid');g.textContent='';
+  for(const n of m.nodes){
+    const f=document.createElement('div');f.className='film'+(n.sharp?' sharp':'');
+    const blur=Math.max(0,(1-n.confidence)*6).toFixed(1);           // 置信→显影：blur 6px→0
+    const bright=(0.55+n.confidence*0.45).toFixed(2);
+    const rt=document.createElement('div');rt.className='rt';rt.textContent=n.root;rt.style.filter=`blur(${blur}px) brightness(${bright})`;
+    const meta=document.createElement('div');meta.className='meta';meta.textContent=(n.sharp?'已显影 · ':'显影中 · ')+'碰撞 '+n.samples+' 次';
+    f.append(rt,meta);
+    f.onclick=()=>{const h=(n.history||[]).map(x=>x.date+(x.hit?' ✦押中':' ○押错')).join('\n')||'还没开过牌';toast('「'+n.root+'」的显影轨迹\n'+h,6000);};
+    g.appendChild(f);
+  }
+  const on=m.relic&&m.relic.crystallized;
+  $('relicEl').className='relic'+(on?' on':'');$('relicEl').textContent=on?'✦':'·';
+  $('relicNote').textContent=on?('舍利子 · 凝于 '+m.relic.at+' · 经得起碰撞、烧不化的那部分你'):('中心尚未结晶 · 已显影 '+(m.relic?m.relic.sharpCount:0)+' 格（一致性够了它自己会凝，不用赶）');
+  show('soulMap');
+  if(m.relic&&m.relic.justCrystallized){
+    $('rmSketch').textContent=m.sketch||'（速写还在暗房里——明早来取。）';
+    $('relicMoment').classList.add('on');
+    requestAnimationFrame(()=>{const L=$('rmLight');L.style.width='72px';L.style.height='72px';L.style.boxShadow='0 0 120px 40px var(--glow)';});
+    $('rmClose').onclick=()=>{$('relicMoment').classList.remove('on');agPost('/agency/relic-seen',{}).catch(()=>{});};
+    $('rmTake').onclick=async()=>{try{const p=await inv('export_text',{name:'siry-relic.txt',content:'SIRY 舍利子 · '+(m.relic.at||'')+'\n\n'+($('rmSketch').textContent||'')});inv('reveal_in_finder',{path:p}).catch(()=>{});toast('舍利子已带走 · 已在访达中打开');}catch(e){toast('带走没成：'+e);}};
+  }
+}
+
+async function agencyBoot(){ // sidecar 就绪/内核变更时刷新日课门：调用点 = checkSdk 成功尾部、内核导出、内核导入
+  if(!TAURI||!SDK_PORT)return;
+  try{
+    const st=await fetch(agBase()+'/agency/status'+agQ()).then(r=>r.json());
+    refreshDaemonUI();loadDeliveryUI();
+    if(!st.hasPack)return; // 未编译过 Soul-pack：门不亮
+    if(!localStorage.getItem('siry_daemon_init')){localStorage.setItem('siry_daemon_init','1');inv('daemon_enable',{hour:8,workspace:AGENCY_WS}).catch(()=>{});}
+    if(!localStorage.getItem('siry_consent_shown')){
+      const c=await firstConsentCard();
+      localStorage.setItem('siry_consent_shown','1');
+      await agPost('/agency/consent',{signals:c});
+    }
+    if(!st.ranToday){$('dailyLbl').textContent='今日显影 · 正在冲洗…';$('dailyDoor').style.display='inline-flex';
+      await agPost('/agency/run',{}).catch(e=>{$('dailyLbl').textContent='今日暗房无光（点击重试）';});
+    }
+    const st2=await fetch(agBase()+'/agency/status'+agQ()).then(r=>r.json());
+    if(st2.reportToday){$('dailyDoor').style.display='inline-flex';$('dailyLbl').textContent='今日显影 · 已冲洗好';}
+    fetch(agBase()+'/agency/soulmap'+agQ()).then(r=>r.json()).then(m=>{if(m&&m.hasMap&&m.nodes.length)$('mapDoor').style.display='inline-flex';}).catch(()=>{});
+    if(st2.pendingDelta)showDeltaCard();
+  }catch(e){/* sidecar 未起或无 pack：静默 */}
+}
+
+if(TAURI&&window.__TAURI__.event){window.__TAURI__.event.listen('siry-daily-link',()=>{openDaily();});}
+
+async function openDaily(){
+  const r=await fetch(agBase()+'/agency/report/today'+agQ()).then(x=>x.json());
+  if(r.error){$('dailyLbl').textContent='今日暗房无光（点击重试）';agPost('/agency/run',{});return;}
+  AG_ITEMS=r.items;AG_HTML=r.htmlPath;$('agDate').textContent=r.date;
+  const box=$('agItems');box.textContent='';
+  if(r.items&&r.items.length){const nhd=document.createElement('div');nhd.className='scard-hint';nhd.style.cssText='margin:2px 2px 16px;line-height:1.85;font-size:12.5px';nhd.innerHTML='下面几条是<b style="color:var(--ink2)">按你的根挑的</b>。点标题看原文；读到对味点「就是我」，不对味「不是我」，没兴趣「划走」——每次轻轻一点都在帮美玲更懂你，<b style="color:var(--ink2)">只在本机记，不打分、不催</b>。';box.appendChild(nhd);}
+  for(const it of r.items){
+    const card=document.createElement('div');card.className='scard';card.dataset.id=it.id;
+    const t=document.createElement('a');t.href='#';t.textContent=it.title;t.style.cssText='font-family:var(--serif);font-size:16px;color:var(--ink);text-decoration:none';
+    t.onclick=e=>{e.preventDefault();window.__TAURI__.opener?window.__TAURI__.opener.openUrl(it.url):window.open(it.url);sig(it.id,'open');};
+    const root=document.createElement('div');root.className='scard-hint';root.textContent='因为你的根「'+it.root+'」';
+    const why=document.createElement('details');const s=document.createElement('summary');s.textContent='为什么选它';s.style.cssText='cursor:pointer;font-size:12.5px;color:var(--ink3)';
+    const p=document.createElement('div');p.textContent=it.reason;p.style.cssText='font-size:13.5px;color:var(--ink2);line-height:1.8;padding:6px 0';
+    let t0=0;why.appendChild(s);why.appendChild(p);
+    why.ontoggle=()=>{if(why.open)t0=Date.now();else if(t0&&Date.now()-t0>3000)sig(it.id,'read',Date.now()-t0);};
+    const row=document.createElement('div');row.className='scard-opts';
+    let reacted=false;
+    const react=(act)=>{if(reacted)return;reacted=true;sig(it.id,act);[...row.children].forEach(x=>x.disabled=true);const m=document.createElement('div');m.className='scard-hint';m.style.marginTop='8px';if(act==='isme'){card.style.borderColor='var(--door)';card.style.boxShadow='0 0 16px var(--glow)';m.style.color='var(--door)';m.textContent='美玲：记下了，这条对味 ✓';}else if(act==='notme'){card.style.opacity=.5;m.textContent='美玲：这注我押错了——记进账本，明天修。';}else{card.style.opacity=.5;m.textContent='已划走 · 明天不会再推这类。';}card.appendChild(m);};
+    for(const [lbl,act] of [['划走','skip'],['不是我','notme'],['就是我','isme']]){
+      const b=document.createElement('button');b.className='scard-opt';b.textContent=lbl;
+      b.onclick=()=>react(act);
+      row.appendChild(b);
+    }
+    card.append(t,root,why,row);box.appendChild(card);
+  }
+  try{
+    const c=await fetch(agBase()+'/agency/collisions/today'+agQ()).then(r=>r.ok?r.json():null);
+    if(c&&c.items&&c.items.length){
+      const hd=document.createElement('div');hd.className='serif';hd.style.cssText='margin:26px 0 10px;font-size:16px;color:var(--door)';hd.textContent='今日碰撞 · '+c.items.length+' 枚（选完就收工，明天不催）';box.appendChild(hd);
+      const TYPE_ZH={ab:'对撞',keepcut:'去留',dilemma:'两难',mirror:'他者镜',deepread:'深读'};
+      for(const it of c.items){
+        const card=document.createElement('div');card.className='scard';
+        const tb=document.createElement('div');tb.className='scard-hint';tb.textContent='【'+(TYPE_ZH[it.type]||'碰撞')+'】测的是你的哪一面，选完就知道';
+        const p=document.createElement('div');p.textContent=it.prompt;p.style.cssText='font-size:15px;line-height:1.9;margin:6px 0 10px';
+        const row=document.createElement('div');row.className='scard-opts';row.style.flexDirection='column';row.style.alignItems='stretch';
+        const revealBox=document.createElement('div');revealBox.style.display='none';revealBox.style.cssText+='margin-top:10px;padding:12px 14px;border-radius:12px;border:0.5px solid var(--line);background:rgba(0,0,0,.18);font-size:13.5px;line-height:1.8';
+        const reveal=(side)=>{
+          const hit=side===it.predict.side;
+          revealBox.style.display='block';
+          revealBox.style.borderColor=hit?'var(--door)':'var(--line)';
+          revealBox.textContent='';
+          const l1=document.createElement('div');l1.textContent=(hit?'✦ 美玲押中了':'○ 美玲押错了')+'——她押的是「'+it.options[it.predict.side]+'」';l1.style.color=hit?'var(--door)':'var(--ink2)';
+          const l2=document.createElement('div');l2.textContent='封存的注：'+it.sealed_reason;l2.style.cssText='color:var(--ink3);margin-top:6px';
+          const l3=document.createElement('div');l3.textContent='这一格底片（'+it.root+'）今晚在暗房里显影，明早地图上见。';l3.style.cssText='color:var(--ink3);margin-top:6px;font-size:12.5px';
+          revealBox.append(l1,l2,l3);
+          [...row.children].forEach(b=>{b.disabled=true;b.style.opacity=b.dataset.side==side?'1':'0.45';});
+        };
+        it.options.forEach((o,idx)=>{
+          const b=document.createElement('button');b.className='scard-opt';b.textContent=o;b.dataset.side=idx;b.style.textAlign='left';
+          b.onclick=()=>{sig(it.id,'pick',{side:idx});reveal(idx);};
+          row.appendChild(b);
+        });
+        const skip=document.createElement('button');skip.className='scard-opt';skip.textContent='跳过这枚（不扣什么，真的）';skip.style.cssText+='opacity:.6';
+        skip.onclick=()=>{sig(it.id,'cskip');card.style.opacity=.4;[...row.children].forEach(b=>b.disabled=true);skip.disabled=true;};
+        card.append(tb,p,row,skip,revealBox);box.appendChild(card);
+        if(c.picks&&c.picks[it.id]!=null)reveal(c.picks[it.id]);   // 已选过的恢复开牌态
+      }
+      const tail=document.createElement('div');tail.className='scard-hint';tail.style.cssText='text-align:center;margin-top:14px';tail.textContent='今天到此。';box.appendChild(tail);
+    }
+  }catch(e){}
+  show('agencyView');
+}
+function sig(itemId,action,extra){agPost('/agency/signal',{itemId,action,...(typeof extra==='number'?{dwellMs:extra}:extra||{})}).catch(()=>{});}
+function openReportFile(){window.__TAURI__.opener?window.__TAURI__.opener.openPath?window.__TAURI__.opener.openPath(AG_HTML):window.__TAURI__.opener.openUrl('file://'+AG_HTML):window.open('file://'+AG_HTML);}
+
+async function showDeltaCard(){
+  const pd=await fetch(agBase()+'/agency/status'+agQ()).then(r=>r.json()).catch(()=>null);
+  if(!pd||!pd.pendingDelta)return;
+  // 极简 E1：确认卡用通用句式（不逐条展示 delta 细节），deltaId:'*' 全量确认/否决
+  openDialog({
+    title:'有一注，我可能一直押错',
+    bodyHtml:'最近同一条根连着押错了几次。<b>要不要我把对它的理解修一修？</b><br><span style="font-size:12.5px;color:var(--ink3)">同意才会写进你的内核；你比信号更懂你自己，否决也完全可以。</span>',
+    goText:'修吧',backText:'保持原样',
+    onGo:()=>agPost('/agency/confirm-delta',{deltaId:'*',accept:true}),
+    onBack:()=>agPost('/agency/confirm-delta',{deltaId:'*',accept:false})});
+}
+let rtLoaded=false;
+// 群星 loading：全名录各配一句（英文为主/中文为辅/领域）——真人真言或忠实核心理念，正确署名
+const RT_MASTERS={
+  "Steve Jobs":["Stay hungry, stay foolish.","求知若饥，虚心若愚","Product & intuition"],
+  "Elon Musk":["When something is important enough, you do it even if the odds are against you.","够重要的事，胜算不大也要做","First principles"],
+  "Peter Thiel":["Competition is for losers.","竞争，是留给输家的","Contrarian thinking"],
+  "Naval Ravikant":["Play long-term games with long-term people.","和长期主义者，玩长期游戏","Wealth & happiness"],
+  "Andrej Karpathy":["The hottest new programming language is English.","最热的新编程语言，是英语","Deep learning"],
+  "Karl Friston":["The brain is a prediction machine that minimizes surprise.","大脑，是一台把意外降到最低的预测机器","Free-energy principle"],
+  "Pierre Bourdieu":["Taste classifies, and it classifies the classifier.","品味为人分类，也暴露了分类的人","Habitus & distinction"],
+  "Walter Mischel":["Self-control is strategy, not willpower.","自控靠策略，不靠意志","Delayed gratification"],
+  "Kurt Lewin":["There is nothing so practical as a good theory.","没有什么，比一个好理论更实用","Field theory"],
+  "Erik Erikson":["Hope is the earliest and most indispensable virtue.","希望，是最早也最不可或缺的美德","Identity & life stages"],
+  "Carl Rogers":["When I accept myself as I am, then I can change.","如实接纳自己，改变才开始","Humanistic psychology"],
+  "Brené Brown":["Vulnerability is the birthplace of courage.","脆弱，是勇气诞生的地方","Vulnerability research"],
+  "Charlie Munger":["Invert, always invert.","反过来想，总是反过来想","Mental models"],
+  "Jonathan Haidt":["The mind is a rider on an elephant.","理性是骑象人，情感才是那头象","Moral psychology"],
+  "Noam Shazeer":["Attention is all you need.","注意力，就是你所需要的一切","Transformer architecture"],
+  "Rob Pike":["Data dominates — design your data structures first.","数据决定一切，先设计好数据结构","Systems & Go"],
+  "Rich Hickey":["Simple is not easy — but it's worth it.","简单不等于容易，却更值得","Simplicity & Clojure"],
+  "Dieter Rams":["Less, but better.","少，却更好","Ten principles of design"],
+  "Patrick Collison":["Progress is made, not given.","进步是造出来的，不是天赐的","Progress studies"]
+};
+function rtSeenPool(){
+  let seen=[];try{seen=JSON.parse(localStorage.getItem('siry_seen_masters')||'[]');}catch(e){}
+  let pool=seen.filter(n=>RT_MASTERS[n]);
+  const seed=['Carl Rogers','Pierre Bourdieu','Naval Ravikant','Charlie Munger','Karl Friston','Brené Brown','Andrej Karpathy','Kurt Lewin'];
+  if(pool.length<5){seed.forEach(n=>{if(RT_MASTERS[n]&&pool.indexOf(n)<0)pool.push(n);});const extra=Object.keys(RT_MASTERS).filter(n=>pool.indexOf(n)<0);while(pool.length<8&&extra.length){pool.push(extra.splice(Math.floor(Math.random()*extra.length),1)[0]);}}
+  for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const t=pool[i];pool[i]=pool[j];pool[j]=t;}
+  return pool;
+}
+function renderRTLoading(){
+  const stars=[[96,150,2.6,'0'],[220,132,3,'.7'],[300,74,2.4,'1.4'],[392,108,3.1,'2.1'],[470,146,2.6,'2.8'],[536,88,2.2,'3.5'],[300,184,2.3,'1.8'],[410,196,2.6,'2.5'],[150,92,1.6,'1.1'],[330,150,1.5,'3.1'],[200,206,1.7,'1.5'],[500,210,1.5,'3.8'],[120,196,1.4,'2.2'],[560,168,1.6,'.4']];
+  const circ=stars.map((s,i)=>`<circle class="rtl-st${i>7?' dim':''}" cx="${s[0]}" cy="${s[1]}" r="${s[2]}" style="--d:${s[3]}s"/>`).join('');
+  $('rtBody').innerHTML=`<div class="rtl"><svg class="rtl-const" viewBox="0 0 640 260" aria-label="星座缓缓聚拢"><defs><filter id="rtlg" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><g stroke="rgba(255,217,160,.38)" stroke-width="1" fill="none"><path d="M96 150 L220 132 L300 74 L392 108 L470 146 L536 88" class="rtl-ln"/><path d="M220 132 L300 184 L410 196 L470 146" class="rtl-ln rtl-ln2"/></g><g fill="var(--door)" filter="url(#rtlg)">${circ}</g></svg><div class="rtl-status">群星正在入座……</div><div class="rtl-q" id="rtlq"><div class="rtl-en" id="rtlen"></div><div class="rtl-zh" id="rtlzh"></div><div class="rtl-a" id="rtla"></div></div></div>`;
+  const pool=rtSeenPool();let n=0;const el=$('rtlq'),en=$('rtlen'),zh=$('rtlzh'),a=$('rtla');
+  const paint=()=>{const nm=pool[n],d=RT_MASTERS[nm];en.textContent=d[0];zh.textContent=d[1];a.innerHTML='— <b>'+esc(nm)+'</b> · '+esc(d[2]);};
+  paint();
+  return setInterval(()=>{el.classList.add('out');setTimeout(()=>{n=(n+1)%pool.length;paint();el.classList.remove('out');},1000);},6200);
+}
+function accumulateSeenMasters(out){
+  try{
+    const found=[];const re=/【([^】]+)】/g;let m;
+    while((m=re.exec(out))){const tok=(m[1]||'').trim();if(tok.length<2)continue;
+      for(const nm in RT_MASTERS){const last=nm.split(' ').pop();if(nm===tok||last===tok||tok.indexOf(nm)>=0||tok.indexOf(last)>=0){if(found.indexOf(nm)<0)found.push(nm);}}}
+    if(!found.length)return;
+    let seen=[];try{seen=JSON.parse(localStorage.getItem('siry_seen_masters')||'[]');}catch(e){}
+    found.forEach(nm=>{if(seen.indexOf(nm)<0)seen.push(nm);});
+    localStorage.setItem('siry_seen_masters',JSON.stringify(seen));
+  }catch(e){}
+}
+async function openRoundtable(){if(!done)return;show('rt');if(rtLoaded)return;
+  const rtTimer=renderRTLoading();
+  try{const tx=(IMPORTED_TX||MSGS.slice(1).map(m=>(m.role==='user'?'他：':'美玲：')+m.content).join('\n')).trim();
+    if(!tx){clearInterval(rtTimer);$('rtBody').innerHTML='<p style="color:var(--ink3);line-height:2">这条路需要一段真实的显影对话。先和美玲聊一场，或换一个有内容的对话文件再来。</p>';rtLoaded=true;return;}
+    const out=await callLLM(RT_SYS,[{role:'user',content:'这是显影对话全文：\n\n'+tx+'\n\n请开始群星旁听席。'}]);
+    clearInterval(rtTimer);
+    $('rtBody').innerHTML=esc(out).replace(/【([^】]+)】/g,'<b class="mn">【$1】</b>');rtLoaded=true;accumulateSeenMasters(out);
+  }catch(e){clearInterval(rtTimer);$('rtBody').textContent='（群星一时没能入座：'+e.message+'。回门厅再推一次门试试。）';}}
+</script>
+</body>
+</html>

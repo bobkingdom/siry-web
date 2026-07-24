@@ -42,13 +42,13 @@ body{font-family:var(--sans);font-weight:300;color:var(--ink);-webkit-font-smoot
 .foyer .hd{font-family:var(--serif);font-size:14.5px;color:var(--ink3);line-height:1.9}
 
 /* SETUP */
-#setup .box{margin:9vh auto;max-width:520px;background:var(--panel);border:0.5px solid var(--line);border-radius:22px;padding:36px 32px;text-align:center}
+#setup .box{margin:5vh auto;max-width:520px;background:var(--panel);border:0.5px solid var(--line);border-radius:22px;padding:36px 32px;text-align:center}
 #setup h2{font-family:var(--serif);font-weight:400;font-size:23px;margin-bottom:18px}
 #setup label{display:block;text-align:left;font-size:12.5px;color:var(--ink3);margin:14px 0 6px}
 #setup input,#setup select{width:100%;padding:12px 14px;border-radius:12px;border:0.5px solid var(--line);background:rgba(0,0,0,.22);color:var(--ink);font-family:var(--sans);font-size:14px;outline:none}
 #setup input:focus,#setup select:focus{border-color:var(--door)}
 #settings .box{margin:7vh auto;max-width:560px;background:var(--panel);border:0.5px solid var(--line);border-radius:22px;padding:30px 30px;text-align:left}
-#settings .set-top{display:flex;align-items:center;justify-content:space-between}
+#settings .set-top{display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:5;background:#251b49;margin:-30px -30px 0;padding:22px 30px 14px;border-radius:22px 22px 0 0}
 #settings h2{font-family:var(--serif);font-weight:400;font-size:23px;margin:0}
 #settings .ghost{padding:7px 15px;font-size:13px}
 #settings .set-lead{font-size:13px;color:var(--ink3);line-height:1.7;margin-top:8px}
@@ -177,6 +177,7 @@ b{font-weight:500}
 .ob-card .ob-tag{display:inline-block;margin-left:6px;font-size:11px;color:var(--door);border:0.5px solid rgba(255,217,160,.4);border-radius:20px;padding:1px 9px}
 #advBox{margin-top:8px;padding:12px 0 0}
 #advToggle{font-family:var(--sans);font-size:12.5px;color:var(--ink3);cursor:pointer;opacity:.8;margin-top:14px;user-select:none}
+.adv-pick.on{border-color:var(--door);color:var(--door);background:rgba(255,200,140,.10)}
 
 </style>
 </head>
@@ -232,57 +233,39 @@ b{font-weight:500}
   <h2 class="serif">进入显影室</h2>
   <div style="font-family:var(--sans);font-size:13px;color:var(--ink3);margin:-8px 0 24px;line-height:1.6">选一种方式连上 AI 就好。填错也不怕，随时能改。</div>
   <select id="provider" style="display:none">
-    <option value="sdk">Claude 订阅（推荐 · 免 key 免安装）</option>
-    <option value="cli">本机助手（已装 claude/opencode 的用）</option>
-    <option value="anthropic">自带 Anthropic Key</option>
-    <option value="openrouter">自带 OpenRouter Key（任意模型）</option>
-    <option value="cloud" disabled>云端零配置（即将到来）</option>
+    <option value="sdk">Claude 账号（推荐 · 免 key）</option>
+    <option value="apikey">API Key</option>
   </select>
   <button type="button" class="ob-card" id="cardSub" onclick="pickProvider('sdk')">
     <div style="font-size:22px;line-height:1.3">🔑</div>
-    <div><div class="ob-t">用我的 Claude 账号<span class="ob-tag">推荐 · macOS</span></div><div class="ob-d">登录一次，免填钥匙、免安装。</div></div>
+    <div><div class="ob-t">用我的 Claude 账号<span class="ob-tag">推荐 · macOS</span></div><div class="ob-d">登录一次，免填钥匙、免安装 —— 复用你已登录的 Claude。</div></div>
   </button>
-  <button type="button" class="ob-card" id="cardKey" onclick="pickProvider('openrouter')">
+  <button type="button" class="ob-card" id="cardKey" onclick="pickProvider('apikey')">
     <div style="font-size:22px;line-height:1.3">🗝️</div>
-    <div><div class="ob-t">贴一个 AI 钥匙（API Key）</div><div class="ob-d">已经有 OpenRouter 之类的 key？粘进来就能用。</div></div>
+    <div><div class="ob-t">用 API Key</div><div class="ob-d">OpenRouter / OpenAI / Anthropic / 自定义中转 —— 有 key 就能用。</div></div>
   </button>
-  <div id="anthropicBox">
-    <label>Anthropic API Key（sk-ant-…）</label>
-    <input id="akey" type="password" placeholder="粘贴你的 Anthropic key" autocomplete="off">
-    <label>模型</label>
-    <select id="amodel">
-      <option value="claude-sonnet-4-6">Claude Sonnet 4.6（推荐）</option>
-      <option value="claude-opus-4-8">Claude Opus 4.8（更深，更慢/贵）</option>
-    </select>
-  </div>
-  <div id="orBox" style="display:none">
-    <label>你的 OpenRouter 钥匙</label>
-    <input id="orkey" type="password" placeholder="粘贴你的 OpenRouter key" autocomplete="off">
-    <label>用哪个模型（填 OpenRouter 上的模型名）</label>
-    <input id="ormodel" type="text" placeholder="如 anthropic/claude-sonnet-4.6 · openai/o3 · google/gemini-2.5-pro" autocomplete="off">
-  </div>
   <div id="sdkBox">
     <div id="sdkStat" style="font-size:12.5px;color:var(--ink3);margin:10px 0 4px;line-height:1.7">正在检查运行时…</div>
     <div id="sdkProg" style="display:none;margin:8px 0"><div style="height:6px;border-radius:3px;background:rgba(0,0,0,.25);overflow:hidden"><div id="sdkBar" style="height:100%;width:0%;background:var(--door);transition:width .3s"></div></div><div id="sdkProgTxt" class="note" style="margin-top:6px">正在准备暗房…</div></div>
     <button type="button" class="btn" id="sdkAction" style="display:none">下载运行时（约 130MB · 全部来自 Node/npm 官方源，一次即可）</button>
   </div>
-  <div id="cliBox" style="display:none">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin:6px 0 4px">
-      <label style="margin:0">本机已就绪的助手</label>
-      <button type="button" id="rescan" style="background:none;border:0.5px solid var(--line);color:var(--ink2);font-family:var(--sans);font-size:12px;border-radius:18px;padding:5px 12px;cursor:pointer">↻ 重新探测</button>
-    </div>
-    <div id="cliStat" style="font-size:12.5px;color:var(--ink3);margin:2px 0 8px;line-height:1.6"></div>
-    <div id="cliGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px"></div>
-    <select id="clicli" style="display:none"></select>
-    <label>模型（claude: sonnet / opus　·　opencode: provider/model）</label>
-    <input id="climodel" type="text" placeholder="sonnet" autocomplete="off">
+  <div id="apiBox" style="display:none">
+    <label>类型</label>
+    <select id="apitype">
+      <option value="openrouter">OpenRouter（一个 key 通各家模型）</option>
+      <option value="openai">OpenAI</option>
+      <option value="anthropic">Anthropic</option>
+      <option value="custom">自定义（OpenAI 兼容中转）</option>
+    </select>
+    <label>接口地址</label>
+    <input id="apiendpoint" type="text" placeholder="选类型会自动填好" autocomplete="off">
+    <label>API Key</label>
+    <input id="apikey" type="password" placeholder="粘贴你的 key" autocomplete="off">
+    <label>模型</label>
+    <input id="apimodel" type="text" placeholder="如 anthropic/claude-sonnet-4.6" autocomplete="off">
   </div>
-  <div id="advToggle">其它接法（本机 Claude CLI · Anthropic Key）›</div>
+  <div id="advToggle">推理深度 ›</div>
   <div id="advBox" style="display:none">
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:2px">
-      <button type="button" class="ghost" style="padding:7px 14px;font-size:12.5px" onclick="pickProvider('cli')">本机 Claude CLI</button>
-      <button type="button" class="ghost" style="padding:7px 14px;font-size:12.5px" onclick="pickProvider('anthropic')">Anthropic Key</button>
-    </div>
     <label>推理深度</label>
     <select id="effort"><option value="high">高 · 推荐</option><option value="xhigh">很高</option><option value="max">最高</option></select>
   </div>
@@ -731,10 +714,12 @@ const RT_SYS = `你是 SIRY「群星旁听席」的导演。下面会给你一�
 名录：Steve Jobs、Elon Musk、Peter Thiel、Naval Ravikant、Andrej Karpathy、Karl Friston、Pierre Bourdieu、Walter Mischel、Kurt Lewin、Erik Erikson、Carl Rogers、Brené Brown、Charlie Munger、Jonathan Haidt、Noam Shazeer、Rob Pike、Rich Hickey、Dieter Rams、Patrick Collison。
 要求：① 每位发言以"【名字】"开头另起一段；② 温暖、有洞察、扣住对话里的具体细节，不空泛、不居高临下——是"郑重地看见一个人"；③ 不评判；④ 中文。最后一段以"【美玲】"收束一句。`;
 
+// 迁移旧接法布局 → 统一 apikey（老用户 localStorage 平滑过渡；cli 已移除，回落账号）
+(function(){const p=localStorage.getItem('siry_provider');if(p==='openrouter'||p==='anthropic'){localStorage.setItem('siry_provider','apikey');localStorage.setItem('siry_apitype',p);if(localStorage.getItem('siry_apikey')==null)localStorage.setItem('siry_apikey',localStorage.getItem(p==='anthropic'?'siry_akey':'siry_orkey')||'');if(localStorage.getItem('siry_apimodel')==null)localStorage.setItem('siry_apimodel',localStorage.getItem(p==='anthropic'?'siry_amodel':'siry_ormodel')||'');}else if(p==='cli'){localStorage.setItem('siry_provider','sdk');}})();
 let PROVIDER=localStorage.getItem('siry_provider')||'sdk';
-let AKEY=localStorage.getItem('siry_akey')||'', AMODEL=localStorage.getItem('siry_amodel')||'claude-sonnet-4-6';
-let ORKEY=localStorage.getItem('siry_orkey')||'', ORMODEL=localStorage.getItem('siry_ormodel')||'';
-const BRIDGE='http://localhost:8733';
+let APITYPE=localStorage.getItem('siry_apitype')||'openrouter';
+let ENDPOINT=localStorage.getItem('siry_endpoint')||'';
+const EP_DEFAULT={openrouter:'https://openrouter.ai/api/v1',openai:'https://api.openai.com/v1',anthropic:'https://api.anthropic.com',custom:''};
 const TAURI = !!(window.__TAURI__ && window.__TAURI__.core);
 const inv=TAURI?window.__TAURI__.core.invoke:async()=>{throw new Error('需要 SIRY 桌面端');};
 let SDK_PORT=null, SDK_SESSION=null, SDK_READY=false;
@@ -776,17 +761,7 @@ async function checkSdk(){
     }
   }catch(e){st.textContent='运行时检查出错：'+e;}
 }
-async function bridgeDetect(){
-  if(TAURI) return await window.__TAURI__.core.invoke('detect_clis');
-  const r=await fetch(BRIDGE+'/health'); return await r.json();
-}
-async function bridgeChat(system,messages){
-  if(TAURI){ return (await window.__TAURI__.core.invoke('chat',{cli:CLICLI,model:MODEL,system,messages,effort:EFFORT})).trim(); }
-  const r=await fetch(BRIDGE+'/chat',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({cli:CLICLI,model:MODEL,system,messages,effort:EFFORT})});
-  const d=await r.json(); if(d.error) throw new Error(d.error); return (d.text||'').trim();
-}
 let KEY='', MODEL='', EFFORT=localStorage.getItem('siry_effort')||'high';
-let CLICLI=localStorage.getItem('siry_clicli')||'claude';
 let MSGS=[], busy=false, done=false, IMPORTED_TX='', AFTER='chat';
 const $=id=>document.getElementById(id);
 function toast(msg, ms=4200){
@@ -800,7 +775,7 @@ function toast(msg, ms=4200){
 
 function show(id){document.querySelectorAll('.scrn').forEach(s=>s.classList.remove('on'));$(id).classList.add('on');window.scrollTo(0,0);}
 function openSettings(){
-  const L={sdk:'我的 Claude 账号（订阅）',openrouter:'OpenRouter 钥匙',anthropic:'Anthropic 钥匙',cli:'本机 Claude CLI'};
+  const L={sdk:'我的 Claude 账号（订阅）',apikey:'API Key · '+(localStorage.getItem('siry_apitype')||'openrouter')};
   const p=localStorage.getItem('siry_provider')||($('provider')&&$('provider').value)||PROVIDER;
   const cp=$('curProvider');if(cp)cp.textContent=L[p]||'—';
   const box=$('agencyBox'),note=$('agencyWebNote');
@@ -808,33 +783,27 @@ function openSettings(){
   if(note)note.style.display=TAURI?'none':'block';
   show('settings');
 }
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('settings')&&$('settings').classList.contains('on'))show('home');});
 function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
 function fig(sz){const c='#ffd9a0',g='#fff0d4';
   return '<svg viewBox="0 0 64 84" width="'+sz+'" height="'+(sz*1.31)+'" aria-hidden="true" style="filter:drop-shadow(0 0 5px '+c+'88)"><ellipse cx="32" cy="78" rx="16" ry="3" fill="rgba(0,0,0,.2)"/><path d="M32 26 L46 70 Q32 74 18 70 Z" fill="'+c+'"/><path d="M32 26 L25 70 Q21.5 71 18 70 Z" fill="rgba(255,255,255,.2)"/><circle cx="32" cy="18" r="8.5" fill="'+c+'"/><circle cx="32" cy="7.3" r="2.3" fill="'+g+'"/></svg>';}
 
-$('provider').value=PROVIDER;$('akey').value=AKEY;$('amodel').value=AMODEL;$('orkey').value=ORKEY;$('ormodel').value=ORMODEL;$('effort').value=EFFORT;
-function toggleProvider(){const p=$('provider').value;$('anthropicBox').style.display=p==='anthropic'?'block':'none';$('orBox').style.display=p==='openrouter'?'block':'none';$('cliBox').style.display=p==='cli'?'block':'none';$('sdkBox').style.display=p==='sdk'?'block':'none';if(p==='cli')checkBridge();if(p==='sdk')checkSdk();}
+$('provider').value=(PROVIDER==='sdk'?'sdk':'apikey');$('apitype').value=APITYPE;$('apikey').value=localStorage.getItem('siry_apikey')||'';$('apimodel').value=localStorage.getItem('siry_apimodel')||'';$('effort').value=EFFORT;
+function apiModelHint(t){const ph={openrouter:'如 anthropic/claude-sonnet-4.6 · openai/o3',openai:'如 gpt-5 · o3',anthropic:'如 claude-sonnet-4-6 · claude-opus-4-8',custom:'你的模型名'};if($('apimodel'))$('apimodel').placeholder=ph[t]||'模型名';}
+function syncEndpoint(){const t=$('apitype').value;const stored=localStorage.getItem('siry_endpoint')||'';$('apiendpoint').value=stored||EP_DEFAULT[t]||'';apiModelHint(t);}
+function onApiType(){const t=$('apitype').value;$('apiendpoint').value=EP_DEFAULT[t]||'';apiModelHint(t);}
+syncEndpoint();
+function toggleProvider(){const p=$('provider').value;$('apiBox').style.display=p==='apikey'?'block':'none';$('sdkBox').style.display=p==='sdk'?'block':'none';if(p==='sdk')checkSdk();if(p==='apikey')syncEndpoint();}
 function pickProvider(p){$('provider').value=p;toggleProvider();
   document.querySelectorAll('.ob-card').forEach(c=>c.classList.remove('on'));
-  const map={sdk:'cardSub',openrouter:'cardKey'};if(map[p])$(map[p]).classList.add('on');
-  if(p==='cli'||p==='anthropic'){$('advBox').style.display='block';}}
+  const map={sdk:'cardSub',apikey:'cardKey'};if(map[p])$(map[p]).classList.add('on');}
 $('advToggle').onclick=()=>{const b=$('advBox');b.style.display=b.style.display==='none'?'block':'none';};
-async function checkBridge(){const st=$('cliStat');st.textContent='正在连接本地后端…';try{const d=await bridgeDetect();const av=Object.keys(d).filter(k=>d[k]);const sel=$('clicli');sel.innerHTML='';if(!av.length){st.textContent='没探测到 claude / opencode。装好其一（并登录/配好）后点上方「'+'重新探测'+'」，或改用下方「自带 key（Anthropic / OpenRouter）」。';return;}const meta={claude:{cn:'Claude Code',cd:'订阅 · 免 key'},opencode:{cn:'opencode',cd:'任意已配 provider'}};
-av.forEach(c=>{const o=document.createElement('option');o.value=c;sel.appendChild(o);});
-if(![...sel.options].some(o=>o.value===CLICLI))CLICLI=av[0];sel.value=CLICLI;
-const grid=$('cliGrid');grid.innerHTML='';
-av.forEach(c=>{const card=document.createElement('div');card.className='cli-card'+(c===CLICLI?' sel':'');card.dataset.cli=c;
-  card.innerHTML='<div class="cn">'+(meta[c]?meta[c].cn:esc(c))+' ✓</div><div class="cd">'+(meta[c]?meta[c].cd:'已就绪')+'</div>';
-  card.onclick=()=>{CLICLI=c;sel.value=c;[...grid.children].forEach(x=>x.classList.toggle('sel',x.dataset.cli===c));setCliModel();};
-  grid.appendChild(card);});
-setCliModel();st.textContent='本机已就绪 ✓ —— 全程不离开这台机器';}catch(e){st.textContent=TAURI?('探测 CLI 出错：'+e):'没连上本地后端（浏览器调试需先跑 node server.cjs）。';}}
-function setCliModel(){const c=$('clicli').value;$('climodel').value=localStorage.getItem('siry_climodel_'+c)||(c==='claude'?'sonnet':'openrouter/anthropic/claude-sonnet-4.6');}
-$('provider').onchange=toggleProvider;$('clicli').onchange=setCliModel;$('rescan').onclick=checkBridge;
-if(!TAURI){const cs=$('cardSub');if(cs)cs.style.display='none';if(!localStorage.getItem('siry_provider')&&$('provider').value==='sdk')$('provider').value='openrouter';}
+$('provider').onchange=toggleProvider;$('apitype').onchange=onApiType;
+if(!TAURI){const cs=$('cardSub');if(cs)cs.style.display='none';if(!localStorage.getItem('siry_provider'))$('provider').value='apikey';}
 pickProvider($('provider').value||'sdk');
 updateFoyer();
 
-function loadCreds(){PROVIDER=localStorage.getItem('siry_provider')||'sdk';EFFORT=localStorage.getItem('siry_effort')||'high';if(PROVIDER==='sdk'){MODEL='';return SDK_READY;}if(PROVIDER==='cli'){CLICLI=localStorage.getItem('siry_clicli')||'claude';MODEL=localStorage.getItem('siry_climodel_'+CLICLI)||(CLICLI==='claude'?'sonnet':'');return true;}if(PROVIDER==='anthropic'){KEY=localStorage.getItem('siry_akey')||'';MODEL=localStorage.getItem('siry_amodel')||'claude-sonnet-4-6';}else{KEY=localStorage.getItem('siry_orkey')||'';MODEL=localStorage.getItem('siry_ormodel')||'';}return !!KEY;}
+function loadCreds(){PROVIDER=localStorage.getItem('siry_provider')||'sdk';EFFORT=localStorage.getItem('siry_effort')||'high';if(PROVIDER==='sdk'){MODEL='';return SDK_READY;}APITYPE=localStorage.getItem('siry_apitype')||'openrouter';ENDPOINT=localStorage.getItem('siry_endpoint')||EP_DEFAULT[APITYPE]||'';KEY=localStorage.getItem('siry_apikey')||'';MODEL=localStorage.getItem('siry_apimodel')||'';return !!KEY;}
 function importKernelText(tx){const body=(tx||'').replace(/^\s*SIRY 显影 · 会话与内核\s*/,'').trim();if(!body){toast('这个文件是空的（只有标题）——它是在还没聊时导出的。换一个有内容的，或先聊一场。');return;}IMPORTED_TX=body;done=true;rtLoaded=false;updateFoyer();if(loadCreds()){show('home');}else{AFTER='home';show('setup');}if(TAURI&&SDK_PORT)agPost('/agency/compile',{kernel:IMPORTED_TX}).then(()=>agencyBoot()).catch(()=>{});}
 $('impf').onchange=ev=>{const f=ev.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>importKernelText(rd.result||'');rd.readAsText(f);};
 $('impLabel').onclick=async()=>{
@@ -851,11 +820,14 @@ $('impLabel').onclick=async()=>{
 $('enter').onclick=async()=>{
   PROVIDER=$('provider').value;
   if(PROVIDER==='sdk'){if(!SDK_READY){$('sdkStat').textContent='先完成上面的下载/登录，再推门。';return;}localStorage.setItem('siry_provider','sdk');EFFORT=$('effort').value;localStorage.setItem('siry_effort',EFFORT);if(AFTER==='home'){AFTER='chat';show('home');return;}renderChips();show('about');return;}
-  if(PROVIDER==='anthropic'){KEY=$('akey').value.trim();MODEL=$('amodel').value;if(!KEY){$('akey').focus();return;}localStorage.setItem('siry_akey',KEY);localStorage.setItem('siry_amodel',MODEL);}
-  else if(PROVIDER==='openrouter'){KEY=$('orkey').value.trim();MODEL=$('ormodel').value.trim();if(!KEY){$('orkey').focus();return;}if(!MODEL){$('ormodel').focus();return;}localStorage.setItem('siry_orkey',KEY);localStorage.setItem('siry_ormodel',MODEL);}
-  else{CLICLI=$('clicli').value;MODEL=$('climodel').value.trim();if(!CLICLI){$('cliStat').textContent='请先连上后端并选一个 CLI。';return;}if(!MODEL){$('climodel').focus();return;}localStorage.setItem('siry_clicli',CLICLI);localStorage.setItem('siry_climodel_'+CLICLI,MODEL);}
-  EFFORT=$('effort').value;localStorage.setItem('siry_effort',EFFORT);localStorage.setItem('siry_provider',PROVIDER);
-  if(PROVIDER==='openrouter'){const e=$('enter');e.disabled=true;e.textContent='检测模型…';const ok=await orReason(MODEL);e.disabled=false;e.textContent='推开这扇门 →';if(ok!==true){showConsent(MODEL,ok===false);return;}}
+  // API Key（openrouter / openai / anthropic / custom 统一一组）
+  APITYPE=$('apitype').value;ENDPOINT=$('apiendpoint').value.trim().replace(/\/+$/,'');KEY=$('apikey').value.trim();MODEL=$('apimodel').value.trim();
+  if(!ENDPOINT){toast('接口地址不能为空（选类型会自动填好）。');$('apiendpoint').focus();return;}
+  if(!KEY){toast('先粘一个 API Key 再推门。');$('apikey').focus();return;}
+  if(!MODEL){toast('填一个模型名再推门。');$('apimodel').focus();return;}
+  localStorage.setItem('siry_provider','apikey');localStorage.setItem('siry_apitype',APITYPE);localStorage.setItem('siry_endpoint',ENDPOINT);localStorage.setItem('siry_apikey',KEY);localStorage.setItem('siry_apimodel',MODEL);
+  EFFORT=$('effort').value;localStorage.setItem('siry_effort',EFFORT);
+  if(APITYPE==='openrouter'){const e=$('enter');e.disabled=true;e.textContent='检测模型…';const ok=await orReason(MODEL);e.disabled=false;e.textContent='推开这扇门 →';if(ok!==true){showConsent(MODEL,ok===false);return;}}
   if(AFTER==='home'){AFTER='chat';show('home');return;}
   renderChips();show('about');
 };
@@ -875,7 +847,7 @@ function openDialog({title,bodyHtml,goText,backText,onGo,onBack}){
   $('cBack').onclick=()=>{$('consent').classList.remove('on');Promise.resolve().then(onBack).catch(()=>{});};
   $('consent').classList.add('on');
 }
-function showConsent(model,no){openDialog({title:no?'这个模型不是推理模型':'没认出这个模型',bodyHtml:(no?'你选的 <b>'+esc(model)+'</b> 似乎<b>不支持推理</b>。':'没在 OpenRouter 列表里认出 <b>'+esc(model)+'</b>。')+'<br><br>SIRY 很依赖推理深度——非推理模型会让美玲变浅、押不准。建议换一个推理模型（如 anthropic/claude-sonnet-4.6 · openai/o3 · google/gemini-2.5-pro · deepseek/deepseek-r1）。',goText:'仍要继续',backText:'换一个模型',onGo:()=>{renderChips();show('about');},onBack:()=>{$('ormodel').focus();}});}
+function showConsent(model,no){openDialog({title:no?'这个模型不是推理模型':'没认出这个模型',bodyHtml:(no?'你选的 <b>'+esc(model)+'</b> 似乎<b>不支持推理</b>。':'没在 OpenRouter 列表里认出 <b>'+esc(model)+'</b>。')+'<br><br>SIRY 很依赖推理深度——非推理模型会让美玲变浅、押不准。建议换一个推理模型（如 anthropic/claude-sonnet-4.6 · openai/o3 · google/gemini-2.5-pro · deepseek/deepseek-r1）。',goText:'仍要继续',backText:'换一个模型',onGo:()=>{renderChips();show('about');},onBack:()=>{$('apimodel').focus();}});}
 
 $('send').onclick=sendMsg;
 $('in').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}});
@@ -895,9 +867,9 @@ function appendRetryBubble(){
   wrap.querySelector('.bub').appendChild(btn);
   log.appendChild(wrap);log.scrollTop=log.scrollHeight;
 }
-async function turn(){busy=true;$('send').disabled=true;if(PROVIDER!=='sdk')showTyping(true);let sdkFailed=false;try{const txt=await callLLM(SYS,MSGS);if(PROVIDER!=='sdk'){const live=liveBubble();await SiryStream.typewrite(txt,live.onText);live.done();}MSGS.push({role:'assistant',content:txt});}catch(e){if(PROVIDER==='sdk'){sdkFailed=true;}else{MSGS.push({role:'assistant',content:'（出错了：'+e.message+'。检查 key/网络/模型 ID 再继续？）'});}}showTyping(false);busy=false;$('send').disabled=false;render();if(sdkFailed)appendRetryBubble();$('in').focus();}
+async function turn(){busy=true;$('send').disabled=true;if(PROVIDER!=='sdk')showTyping(true);let sdkFailed=false;try{const txt=await callLLM(SYS,MSGS);if(PROVIDER!=='sdk'){const live=liveBubble();await SiryStream.typewrite(txt,live.onText);live.done();}MSGS.push({role:'assistant',content:txt});}catch(e){if(PROVIDER==='sdk'){sdkFailed=true;}else{let m=(e&&e.message)||(typeof e==='string'?e:'')||'未知错误';let hint='。检查 key / 接口地址 / 模型 ID 再继续？';if(/401|403|invalid|unauthor|api.?key/i.test(String(m)))hint='。多半是 key 或接口地址不对——去设置里核对一下，或换一种类型。';MSGS.push({role:'assistant',content:'（出错了：'+m+hint+'）'});}}showTyping(false);busy=false;$('send').disabled=false;render();if(sdkFailed)appendRetryBubble();$('in').focus();}
 
-async function callLLM(system,messages){if(PROVIDER==='sdk')return callSdk(system,messages);if(PROVIDER==='cli')return callBridge(system,messages);return PROVIDER==='openrouter'?callOR(system,messages):callAnt(system,messages);}
+async function callLLM(system,messages){if(PROVIDER==='sdk')return callSdk(system,messages);return callApiKey(system,messages);}
 async function callSdk(system,messages){
   const latest=messages[messages.length-1];
   const isMain=system===SYS; // 只有美玲主对话用持续会话；群星(RT_SYS)等一律一次性，绝不 resume 美玲的 session
@@ -919,15 +891,20 @@ async function callSdk(system,messages){
     return text;
   }finally{live.done();}
 }
-async function callBridge(system,messages){return bridgeChat(system,messages);}
-async function callAnt(system,messages){
-  const eff=(MODEL==='claude-sonnet-4-6'&&EFFORT==='xhigh')?'high':EFFORT;
-  const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:MODEL,max_tokens:16000,thinking:{type:'adaptive'},output_config:{effort:eff},system:system,messages:messages})});
-  const d=await r.json();if(d.error)throw new Error(d.error.message||'API error');if(!d.content)throw new Error('空回复');return d.content.filter(b=>b.type==='text').map(b=>b.text).join('').trim();}
-async function callOR(system,messages){
+async function callApiKey(system,messages){
+  const base=(ENDPOINT||EP_DEFAULT[APITYPE]||'').replace(/\/+$/,'');
+  if(APITYPE==='anthropic'){
+    const eff=(MODEL==='claude-sonnet-4-6'&&EFFORT==='xhigh')?'high':EFFORT;
+    const r=await fetch((base||'https://api.anthropic.com')+'/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:MODEL,max_tokens:16000,thinking:{type:'adaptive'},output_config:{effort:eff},system,messages})});
+    const d=await r.json();if(d.error)throw new Error(d.error.message||'API error');if(!d.content)throw new Error('空回复');return d.content.filter(b=>b.type==='text').map(b=>b.text).join('').trim();
+  }
+  // OpenAI 兼容：openrouter / openai / custom
   const eff=(EFFORT==='max'||EFFORT==='xhigh')?'high':EFFORT;
-  const r=await fetch('https://openrouter.ai/api/v1/chat/completions',{method:'POST',headers:{'content-type':'application/json','authorization':'Bearer '+KEY,'X-Title':'SIRY'},body:JSON.stringify({model:MODEL,max_tokens:8000,reasoning:{effort:eff},messages:[{role:'system',content:system},...messages]})});
-  const d=await r.json();if(d.error)throw new Error((d.error&&d.error.message)||'API error');if(!d.choices||!d.choices[0])throw new Error('空回复（检查模型 ID）');return (d.choices[0].message.content||'').trim();}
+  const body={model:MODEL,max_tokens:8000,messages:[{role:'system',content:system},...messages]};
+  if(APITYPE==='openrouter')body.reasoning={effort:eff};
+  const r=await fetch((base||'https://openrouter.ai/api/v1')+'/chat/completions',{method:'POST',headers:{'content-type':'application/json','authorization':'Bearer '+KEY,'X-Title':'SIRY'},body:JSON.stringify(body)});
+  const d=await r.json();if(d.error)throw new Error((d.error&&d.error.message)||'API error');if(!d.choices||!d.choices[0])throw new Error('空回复（检查模型 ID / 接口地址）');return (d.choices[0].message.content||'').trim();
+}
 
 function cardHandlers(){return{onChoice:t=>{$('in').value=t;sendMsg();},onExportKernel:async t=>{$('exp').click();if(TAURI&&SDK_PORT){await agPost('/agency/compile',{kernel:t});agencyBoot();}}};}
 function liveBubble(){

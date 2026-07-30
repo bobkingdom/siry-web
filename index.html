@@ -22,6 +22,11 @@ body{font-family:var(--sans);font-weight:300;color:var(--ink);-webkit-font-smoot
 .scrn{display:none;min-height:100%}
 .scrn.on{display:block}
 .wrap{max-width:760px;margin:0 auto;padding:0 22px}
+/* 窗口最大化后，卡片类屏在视口里垂直居中，别吊在顶上留一大片空。
+   #chat 自己是全高 flex 布局（#chat.on 优先级更高），显式排除。
+   用 margin:auto 而不是 align-items:center —— 内容比视口高时仍能正常滚到顶，不会被切。 */
+.scrn.on:not(#chat){display:flex;min-height:100%}
+.scrn.on:not(#chat)>.wrap{margin:auto;width:100%;padding-top:5vh;padding-bottom:5vh}
 .serif{font-family:var(--serif)}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
 @keyframes breathe{0%,100%{opacity:.9}50%{opacity:1}}
@@ -108,9 +113,15 @@ body{font-family:var(--sans);font-weight:300;color:var(--ink);-webkit-font-smoot
 .ghost:hover{border-color:var(--door);color:var(--ink)}
 .solid{background:var(--door);color:#1b1540;border:none;font-family:var(--sans);font-size:14px;border-radius:30px;padding:11px 22px;cursor:pointer}
 b{font-weight:500}
-#chipsWrap .grp{margin:16px 0 4px}
-#chipsWrap .gl{font-size:12.5px;color:var(--ink3);margin-bottom:9px}
-#chipsWrap .chips{display:flex;flex-wrap:wrap;gap:8px}
+/* #about 与 #setup/#settings 同一套卡片语言（同底色/同 0.5px 描边/同 22px 圆角），
+   卡内只有一条对齐纪律：标题·副标·按钮居中，组标签与 chips 左对齐。 */
+#about .box{background:var(--panel);border:0.5px solid var(--line);border-radius:22px;padding:34px 32px;text-align:center}
+#about h2{font-family:var(--serif);font-weight:400;font-size:23px;margin:0 0 10px}
+#chipsWrap{text-align:left;margin-top:24px}
+#chipsWrap .grp{margin:0 0 22px}
+#chipsWrap .grp:last-child{margin-bottom:6px}
+#chipsWrap .gl{font-size:12.5px;color:var(--ink3);margin-bottom:10px;line-height:1.6}
+#chipsWrap .chips{display:flex;flex-wrap:wrap;gap:9px}
 .chip{font-size:13px;color:var(--ink2);border:0.5px solid var(--line);background:rgba(0,0,0,.16);border-radius:22px;padding:7px 14px;cursor:pointer;transition:.2s;font-family:var(--sans)}
 .chip:hover{border-color:var(--ink3)}
 .chip.on{border-color:var(--door);background:rgba(255,180,120,.14);color:var(--ink)}
@@ -179,6 +190,12 @@ b{font-weight:500}
 #advToggle{font-family:var(--sans);font-size:12.5px;color:var(--ink3);cursor:pointer;opacity:.8;margin-top:14px;user-select:none}
 .adv-pick.on{border-color:var(--door);color:var(--door);background:rgba(255,200,140,.10)}
 
+#mirror .mr-q{font-size:13px;color:var(--ink3);margin-top:6px}
+#mirror .mr-a{background:var(--panel);border:0.5px solid var(--line);border-radius:16px;padding:14px 16px;margin-top:10px;line-height:1.9;font-size:14.5px;text-align:left}
+#mirror input{padding:11px 14px;border-radius:12px;border:0.5px solid var(--line);background:rgba(0,0,0,.22);color:var(--ink);font-family:var(--sans);font-size:14px;outline:none;box-sizing:border-box}
+#mirror input:focus{border-color:var(--door)}
+#mirror .mr-sum{background:var(--panel);border:0.5px solid var(--line);border-radius:18px;padding:20px 22px;margin-top:16px;text-align:left}
+#mirror .linkbtn{background:none;border:none;color:var(--door);cursor:pointer;font-size:12px;text-decoration:underline;padding:0;font-family:var(--sans)}
 </style>
 </head>
 <body>
@@ -223,6 +240,10 @@ b{font-weight:500}
       <svg viewBox="0 0 60 80" width="46" aria-hidden="true"><rect x="12" y="16" width="36" height="48" rx="4" fill="#130e2b" stroke="rgba(255,217,160,.45)" stroke-width="1"/><circle cx="30" cy="40" r="9" fill="rgba(255,200,140,.30)"/></svg>
       <span class="lbl">灵魂地图</span>
     </button>
+    <button class="doorbtn" id="mirrorDoor" style="display:none" onclick="openMirror()">
+      <svg viewBox="0 0 60 80" width="46" aria-hidden="true"><ellipse cx="30" cy="40" rx="17" ry="26" fill="#130e2b" stroke="rgba(255,217,160,.45)" stroke-width="1"/><ellipse cx="30" cy="40" rx="11" ry="19" fill="rgba(255,200,140,.22)"/></svg>
+      <span class="lbl">照镜子 · 问问你的剪影</span>
+    </button>
     <div class="hd" id="foyerHd">走完显影之后，这扇门会轻轻亮起——<br>门后，是群星在聊今天的你。</div>
     <div style="margin-top:24px"><label id="impLabel" style="font-size:13px;color:var(--ink3);cursor:pointer;border-bottom:0.5px solid var(--line);padding-bottom:2px">已经聊过了？导入内核（siry-kernel.txt），直接推门看群星 →</label><input id="impf" type="file" style="display:none"></div>
   </div>
@@ -234,11 +255,16 @@ b{font-weight:500}
   <div style="font-family:var(--sans);font-size:13px;color:var(--ink3);margin:-8px 0 24px;line-height:1.6">选一种方式连上 AI 就好。填错也不怕，随时能改。</div>
   <select id="provider" style="display:none">
     <option value="sdk">Claude 账号（推荐 · 免 key）</option>
+    <option value="codex">ChatGPT 账号 · Codex 订阅（免 key）</option>
     <option value="apikey">API Key</option>
   </select>
   <button type="button" class="ob-card" id="cardSub" onclick="pickProvider('sdk')">
     <div style="font-size:22px;line-height:1.3">🔑</div>
     <div><div class="ob-t">用我的 Claude 账号<span class="ob-tag">推荐 · macOS</span></div><div class="ob-d">登录一次，免填钥匙、免安装 —— 复用你已登录的 Claude。</div></div>
+  </button>
+  <button type="button" class="ob-card" id="cardCodex" onclick="pickProvider('codex')">
+    <div style="font-size:22px;line-height:1.3">🌀</div>
+    <div><div class="ob-t">用我的 ChatGPT 账号<span class="ob-tag">Codex 订阅</span></div><div class="ob-d">本机装了 Codex 并登录过？直接用你的订阅额度，免填钥匙。</div></div>
   </button>
   <button type="button" class="ob-card" id="cardKey" onclick="pickProvider('apikey')">
     <div style="font-size:22px;line-height:1.3">🗝️</div>
@@ -248,6 +274,11 @@ b{font-weight:500}
     <div id="sdkStat" style="font-size:12.5px;color:var(--ink3);margin:10px 0 4px;line-height:1.7">正在检查运行时…</div>
     <div id="sdkProg" style="display:none;margin:8px 0"><div style="height:6px;border-radius:3px;background:rgba(0,0,0,.25);overflow:hidden"><div id="sdkBar" style="height:100%;width:0%;background:var(--door);transition:width .3s"></div></div><div id="sdkProgTxt" class="note" style="margin-top:6px">正在准备暗房…</div></div>
     <button type="button" class="btn" id="sdkAction" style="display:none">下载运行时（约 130MB · 全部来自 Node/npm 官方源，一次即可）</button>
+  </div>
+  <div id="codexBox" style="display:none">
+    <div id="codexStat" style="font-size:12.5px;color:var(--ink3);margin:10px 0 4px;line-height:1.7">正在检查 Codex…</div>
+    <label>模型（留空用 Codex 的默认）</label>
+    <input id="codexmodel" type="text" placeholder="留空即可" autocomplete="off">
   </div>
   <div id="apiBox" style="display:none">
     <label>类型</label>
@@ -387,6 +418,15 @@ b{font-weight:500}
   <div class="relic" id="relicEl">·</div>
   <div class="note" id="relicNote" style="text-align:center"></div>
   <div class="filmgrid" id="filmGrid"></div>
+</div></div>
+
+<div class="scrn" id="mirror"><div class="wrap" style="max-width:640px">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 0 8px">
+    <div class="serif" style="font-size:20px">照镜子</div>
+    <button class="ghost" style="padding:7px 14px" onclick="show('home')">← 回门厅</button>
+  </div>
+  <div class="note">问剪影一个你从没告诉过它的问题，看它答得像不像你。只证伪：「像」不加固，「不像」才让内核更准。</div>
+  <div id="mrBody" style="padding:14px 0 10vh"></div>
 </div></div>
 <div id="relicMoment"><div style="max-width:520px">
   <div id="rmLight" style="width:10px;height:10px;border-radius:50%;margin:0 auto 30px;background:var(--door);box-shadow:0 0 0px var(--glow);transition:box-shadow 3s,width 3s,height 3s"></div>
@@ -723,6 +763,19 @@ const EP_DEFAULT={openrouter:'https://openrouter.ai/api/v1',openai:'https://api.
 const TAURI = !!(window.__TAURI__ && window.__TAURI__.core);
 const inv=TAURI?window.__TAURI__.core.invoke:async()=>{throw new Error('需要 SIRY 桌面端');};
 let SDK_PORT=null, SDK_SESSION=null, SDK_READY=false;
+let CODEX_THREAD=null; // Codex 订阅会话（resume 续聊用），与 SDK_SESSION 同生命周期
+// TAURI 下不分接法拉起 sidecar：它管内核/地图/账本这些文件，跟 Claude 登录无关（T1 已懒加载 SDK）。
+// 无 node 运行时返回 null（调用方自行引导 node-only 下载），绝不 throw。
+async function ensureSidecar(){
+  if(!TAURI)return null;
+  if(SDK_PORT)return SDK_PORT;
+  try{
+    const rs=await inv('runtime_status');
+    if(!rs.node)return null;
+    SDK_PORT=await inv('sidecar_start');
+    return SDK_PORT;
+  }catch(e){return null;}
+}
 async function checkSdk(){
   if(SDK_READY)return; // 就绪快路径：本次运行已连好 sidecar+登录，sdkStat 文案仍有效，防重复 start/探测
   const st=$('sdkStat'), act=$('sdkAction');
@@ -775,7 +828,7 @@ function toast(msg, ms=4200){
 
 function show(id){document.querySelectorAll('.scrn').forEach(s=>s.classList.remove('on'));$(id).classList.add('on');window.scrollTo(0,0);}
 function openSettings(){
-  const L={sdk:'我的 Claude 账号（订阅）',apikey:'API Key · '+(localStorage.getItem('siry_apitype')||'openrouter')};
+  const L={sdk:'我的 Claude 账号（订阅）',codex:'我的 ChatGPT 账号（Codex 订阅）',apikey:'API Key · '+(localStorage.getItem('siry_apitype')||'openrouter')};
   const p=localStorage.getItem('siry_provider')||($('provider')&&$('provider').value)||PROVIDER;
   const cp=$('curProvider');if(cp)cp.textContent=L[p]||'—';
   const box=$('agencyBox'),note=$('agencyWebNote');
@@ -784,6 +837,125 @@ function openSettings(){
   show('settings');
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('settings')&&$('settings').classList.contains('on'))show('home');});
+// ---- 照镜子（F2）----
+// 无记忆纪律：MR.sys ≠ SYS ⇒ callSdk/callCodex 的 isMain 判据保证每问一次性、绝不 resume 美玲会话。
+// 转录不落盘；只有 /mirror/judge 的聚合账本。一组 MR_MAX 问即收（反成瘾设计：有终点、不重复）。
+let MR={sys:null,roots:[],judged:0,verdicts:[],busy:false,pendingRoot:null};
+const MR_MAX=3;
+function mrRootOf(text){const m=(text||'').match(/【根据[:：]\s*([^】]+)】/);return m?m[1].trim():null;}
+function sessionKernelText(){
+  if(IMPORTED_TX)return IMPORTED_TX;
+  const t=MSGS.slice(1).map(m=>(m.role==='user'?'我：':'美玲：')+m.content).join('\n\n').trim();
+  return t||null;
+}
+async function mrEnsureRuntime(host){
+  try{const rs=await inv('runtime_status');if(rs.node)return true;}catch(e){host.innerHTML='<div class="note">读运行时状态失败：'+esc(String(e))+'</div>';return false;}
+  host.innerHTML='<div class="note">第一次照镜子要装一个小引擎（约 50MB，来自 Node 官方源，只下这一次；它只在你本机跑）。</div><button class="btn" type="button" id="mrDl">装上镜子的引擎</button><div id="mrProg" class="note" style="display:none"></div>';
+  return await new Promise(resolve=>{
+    $('mrDl').onclick=async()=>{
+      $('mrDl').style.display='none';const pr=$('mrProg');pr.style.display='block';pr.textContent='正在准备…';
+      const un=await window.__TAURI__.event.listen('runtime:progress',e=>{const x=e.payload;pr.textContent='正在擦亮镜子… '+(x.pct||0).toFixed(0)+'%';});
+      try{await inv('runtime_download',{scope:'node'});un();resolve(true);}
+      catch(err){un();pr.textContent='下载失败：'+esc(String(err))+'。回门厅重进再试。';resolve(false);}
+    };
+  });
+}
+async function openMirror(){
+  if(!TAURI){toast('照镜子需要桌面版（要读你本机的灵魂地图）');return;}
+  show('mirror');const body=$('mrBody');body.innerHTML='<div class="note">镜子在擦亮…</div>';
+  let p=await ensureSidecar();
+  if(!p){
+    const ok=await mrEnsureRuntime(body);if(!ok)return;
+    try{SDK_PORT=await inv('sidecar_start');p=SDK_PORT;}catch(e){body.innerHTML='<div class="note">引擎没起来：'+esc(String(e))+'。回门厅重进再试。</div>';return;}
+  }
+  let sys=await fetch(agBase()+'/mirror/system'+agQ()).then(r=>r.json()).catch(()=>null);
+  if(sys&&sys.error){const k=sessionKernelText();
+    if(k){await agPost('/agency/compile',{kernel:k}).catch(()=>{});sys=await fetch(agBase()+'/mirror/system'+agQ()).then(r=>r.json()).catch(()=>null);}}
+  if(!sys||sys.error||!sys.system){body.innerHTML='<div class="note">'+esc((sys&&sys.error)||'镜子没接上——回门厅重进再试。')+'</div>';return;}
+  MR={sys:sys.system,roots:sys.roots||[],judged:0,verdicts:[],busy:false,pendingRoot:null};
+  agencyBoot();
+  mrRenderAsk();
+}
+async function mrLedgerLine(){
+  try{const l=await fetch(agBase()+'/mirror/ledger'+agQ()).then(r=>r.json());
+    if(!l||l.accuracy==null)return '第一次照镜子——它还没被你考过。';
+    const worst=Object.entries(l.byRoot||{}).filter(([,v])=>v.miss>0).sort((a,b)=>b[1].miss-a[1].miss).slice(0,2).map(([k])=>k);
+    return '到目前为止像你 '+Math.round(l.accuracy*100)+'%（'+l.hit+'/'+(l.hit+l.miss)+'）'+(worst.length?' · 还没懂你：'+worst.join('、'):'');
+  }catch{return '';}
+}
+function mrRenderAsk(){
+  const body=$('mrBody');
+  body.innerHTML='<div class="note" id="mrAcc"></div>'
+    +'<div style="display:flex;gap:10px;margin-top:14px"><input id="mrQ" type="text" placeholder="问一个你从没告诉过它的问题…" style="flex:1" autocomplete="off"><button class="solid" type="button" id="mrAsk">问</button></div>'
+    +'<div class="note">第 '+(MR.judged+1)+' / '+MR_MAX+' 问 · <button type="button" class="linkbtn" id="mrEnd">先收摊</button></div>'
+    +'<div id="mrOut" style="margin-top:16px"></div>';
+  mrLedgerLine().then(t=>{const a=$('mrAcc');if(a)a.textContent=t;});
+  $('mrEnd').onclick=()=>mrSummary();
+  $('mrQ').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('mrAsk').click();}});
+  $('mrQ').focus();
+  $('mrAsk').onclick=async()=>{
+    if(MR.busy)return;const qt=$('mrQ').value.trim();if(!qt)return;
+    MR.busy=true;$('mrAsk').disabled=true;$('mrQ').disabled=true;$('mrOut').innerHTML='<div class="note">剪影在想…</div>';
+    let ans='';
+    try{ans=await callLLM(MR.sys,[{role:'user',content:qt}]);}
+    catch(e){$('mrOut').innerHTML='<div class="note">没答上来：'+esc((e&&e.message)||String(e))+'。再问一次试试。</div>';MR.busy=false;$('mrAsk').disabled=false;$('mrQ').disabled=false;return;}
+    let root=mrRootOf(ans);
+    if(!root){ // 追问一次（仍一次性会话，不带上一答）
+      try{const a2=await callLLM(MR.sys,[{role:'user',content:qt+'\n\n（提醒：答完必须另起一行给出恰好一行【根据:某条根】。）'}]);if(mrRootOf(a2)){ans=a2;root=mrRootOf(a2);}}catch{}
+    }
+    mrRenderAnswer(qt,ans,root);
+    MR.busy=false; // 答案已渲染、判定未提交：问询行（mrQ/mrAsk）保持锁定，只有下一轮 mrRenderAsk 才重新解锁
+  };
+}
+function mrRenderAnswer(qt,ans,root){
+  MR.pendingRoot=root;
+  const known=root&&MR.roots.includes(root);
+  $('mrOut').innerHTML='<div class="mr-q">你问：'+esc(qt)+'</div>'
+    +'<div class="mr-a">'+esc(ans).replace(/\n/g,'<br>')+'</div>'
+    +'<div class="note">'+(root?('它凭的是「'+esc(root)+'」'+(known?'':'（这条不在你的地图上——判「不像」只记账，不动地图）')):'（它没交代根据——判定只记账，不动地图）')+'</div>'
+    +'<div style="display:flex;gap:10px;margin-top:12px"><button class="solid" type="button" id="mrHit">像我</button><button class="ghost" type="button" id="mrMiss">不像</button></div>'
+    +'<div id="mrCorr" style="display:none;margin-top:10px"><input id="mrCorrIn" type="text" placeholder="那其实会怎样？（可跳过）" style="width:100%" autocomplete="off"><div style="display:flex;gap:10px;margin-top:8px"><button class="ghost" type="button" id="mrCorrSkip">不说了</button><button class="solid" type="button" id="mrCorrGo">就这样记</button></div></div>';
+  $('mrHit').onclick=()=>mrJudge('hit',null);
+  $('mrMiss').onclick=()=>{$('mrHit').disabled=true;$('mrMiss').disabled=true;$('mrCorr').style.display='block';$('mrCorrIn').focus();
+    $('mrCorrSkip').onclick=()=>mrJudge('miss',null);
+    $('mrCorrGo').onclick=()=>mrJudge('miss',$('mrCorrIn').value.trim()||null);
+  };
+}
+async function mrJudge(verdict,correction){
+  let r=null;
+  try{r=await agPost('/mirror/judge',{root:MR.pendingRoot||'（未标根）',verdict,...(correction?{correction}:{})});}catch(e){}
+  if(!r||r.error){
+    toast('这次判定没存上'+(r&&r.error?('：'+r.error):'')+'——不算数，可以重判。');
+    const h=$('mrHit'),m=$('mrMiss');if(h)h.disabled=false;if(m)m.disabled=false;   // 落盘失败：允许重判，不假装成功
+    return;
+  }
+  MR.verdicts.push({root:MR.pendingRoot,verdict,deltaProposed:!!r.deltaProposed,rootMatched:!!r.rootMatched,corrected:!!correction});
+  MR.judged+=1;
+  if(MR.judged>=MR_MAX)mrSummary();else mrRenderAsk();
+}
+async function mrSummary(){
+  const body=$('mrBody');
+  const n=MR.verdicts.length,hits=MR.verdicts.filter(v=>v.verdict==='hit').length;
+  const missRoots=[...new Set(MR.verdicts.filter(v=>v.verdict==='miss'&&v.root).map(v=>v.root))];
+  // 冷启动可见性（F2-A1）：地图还没这条根时，「不像」只能记账、咬不动地图——小结必须说清账去了哪，
+  // 否则用户体感是"什么都没发生"（同 A7 信号按钮沉默一类病）。
+  const rootlessMiss=MR.verdicts.some(v=>v.verdict==='miss'&&!v.rootMatched);
+  const matchedMiss=MR.verdicts.some(v=>v.verdict==='miss'&&v.rootMatched);
+  const anyCorr=MR.verdicts.some(v=>v.verdict==='miss'&&v.corrected);
+  const deltaNow=MR.verdicts.some(v=>v.deltaProposed);
+  let went='';
+  if(deltaNow)went='有条根被你连着证伪了——回门厅会弹认错卡，确认后写进内核。';
+  else if(matchedMiss)went='「不像」已经咬上灵魂地图：那条根的底片糊了一点。同一条根再错两次，就会弹认错卡问你怎么改。';
+  else if(rootlessMiss)went='这几笔「不像」先记在账上——道场还没攒出这条根的底片（灵魂地图靠碰撞对账长出来）。等它显影出来，这笔账'+(anyCorr?'和你补的那句':'')+'会自动咬上去。';
+  const acc=await mrLedgerLine();
+  body.innerHTML='<div class="mr-sum"><div class="serif" style="font-size:18px">这次照完了</div>'
+    +'<div class="note" style="margin-top:8px">'+(n?('这组 '+hits+' / '+n+' 像你'+(missRoots.length?' · 这回没懂你的：'+esc(missRoots.join('、')):'')):'一问都没判——镜子不催你。')+'</div>'
+    +(acc?'<div class="note">'+esc(acc)+'</div>':'')
+    +(went?'<div class="note" style="margin-top:6px">'+esc(went)+'</div>':'')
+    +'<div class="note" style="margin-top:6px">握不住的才会珍惜——这场问答不留档，只留这笔账。</div>'
+    +'<div style="margin-top:14px"><button class="ghost" type="button" onclick="show(\'home\')">回门厅</button></div></div>';
+  if(deltaNow)agencyBoot(); // 认错卡按既有路径弹出
+}
 function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
 function fig(sz){const c='#ffd9a0',g='#fff0d4';
   return '<svg viewBox="0 0 64 84" width="'+sz+'" height="'+(sz*1.31)+'" aria-hidden="true" style="filter:drop-shadow(0 0 5px '+c+'88)"><ellipse cx="32" cy="78" rx="16" ry="3" fill="rgba(0,0,0,.2)"/><path d="M32 26 L46 70 Q32 74 18 70 Z" fill="'+c+'"/><path d="M32 26 L25 70 Q21.5 71 18 70 Z" fill="rgba(255,255,255,.2)"/><circle cx="32" cy="18" r="8.5" fill="'+c+'"/><circle cx="32" cy="7.3" r="2.3" fill="'+g+'"/></svg>';}
@@ -793,18 +965,31 @@ function apiModelHint(t){const ph={openrouter:'如 anthropic/claude-sonnet-4.6 �
 function syncEndpoint(){const t=$('apitype').value;const stored=localStorage.getItem('siry_endpoint')||'';$('apiendpoint').value=stored||EP_DEFAULT[t]||'';apiModelHint(t);}
 function onApiType(){const t=$('apitype').value;$('apiendpoint').value=EP_DEFAULT[t]||'';apiModelHint(t);}
 syncEndpoint();
-function toggleProvider(){const p=$('provider').value;$('apiBox').style.display=p==='apikey'?'block':'none';$('sdkBox').style.display=p==='sdk'?'block':'none';if(p==='sdk')checkSdk();if(p==='apikey')syncEndpoint();}
+function toggleProvider(){const p=$('provider').value;$('apiBox').style.display=p==='apikey'?'block':'none';$('sdkBox').style.display=p==='sdk'?'block':'none';$('codexBox').style.display=p==='codex'?'block':'none';if(p==='sdk')checkSdk();if(p==='apikey')syncEndpoint();if(p==='codex')checkCodex();}
 function pickProvider(p){$('provider').value=p;toggleProvider();
   document.querySelectorAll('.ob-card').forEach(c=>c.classList.remove('on'));
-  const map={sdk:'cardSub',apikey:'cardKey'};if(map[p])$(map[p]).classList.add('on');}
+  const map={sdk:'cardSub',codex:'cardCodex',apikey:'cardKey'};if(map[p])$(map[p]).classList.add('on');}
+// Codex 订阅：探测本机 codex CLI（凭证在 ~/.codex/auth.json，GUI 启动也拿得到——
+// 与 claude 的 Keychain 凭证不同，那条在 Finder 启动下会 403，所以只有 Codex 能走 CLI）
+let CODEX_READY=false;
+async function checkCodex(){const st=$('codexStat');
+  if(!TAURI){st.textContent='「ChatGPT 账号」需要桌面版（网页里没法调用本机 Codex）。请改用下面的 API Key。';return;}
+  st.textContent='正在检查 Codex…';
+  try{const d=await inv('detect_codex');
+    if(d&&d.codex){CODEX_READY=true;st.textContent='本机 Codex 已就绪 ✓ —— 用你的 ChatGPT 订阅额度，不额外收费。';}
+    else{CODEX_READY=false;st.textContent='没找到 codex 命令。先装官方 Codex CLI 并在终端跑一次 codex login，再回来点这张卡。';}
+  }catch(e){CODEX_READY=false;st.textContent='检查 Codex 出错：'+e;}}
 $('advToggle').onclick=()=>{const b=$('advBox');b.style.display=b.style.display==='none'?'block':'none';};
 $('provider').onchange=toggleProvider;$('apitype').onchange=onApiType;
-if(!TAURI){const cs=$('cardSub');if(cs)cs.style.display='none';if(!localStorage.getItem('siry_provider'))$('provider').value='apikey';}
+$('codexmodel').value=localStorage.getItem('siry_codexmodel')||'';
+// 网页版：两条「本机账号」路都要桌面版（一个要 sidecar，一个要本机 codex 进程）
+if(!TAURI){['cardSub','cardCodex'].forEach(id=>{const c=$(id);if(c)c.style.display='none';});if(!localStorage.getItem('siry_provider'))$('provider').value='apikey';}
 pickProvider($('provider').value||'sdk');
 updateFoyer();
+if(TAURI&&(localStorage.getItem('siry_provider')||'sdk')!=='sdk'){ensureSidecar().then(p=>{if(p)agencyBoot();}).catch(()=>{});}
 
-function loadCreds(){PROVIDER=localStorage.getItem('siry_provider')||'sdk';EFFORT=localStorage.getItem('siry_effort')||'high';if(PROVIDER==='sdk'){MODEL='';return SDK_READY;}APITYPE=localStorage.getItem('siry_apitype')||'openrouter';ENDPOINT=localStorage.getItem('siry_endpoint')||EP_DEFAULT[APITYPE]||'';KEY=localStorage.getItem('siry_apikey')||'';MODEL=localStorage.getItem('siry_apimodel')||'';return !!KEY;}
-function importKernelText(tx){const body=(tx||'').replace(/^\s*SIRY 显影 · 会话与内核\s*/,'').trim();if(!body){toast('这个文件是空的（只有标题）——它是在还没聊时导出的。换一个有内容的，或先聊一场。');return;}IMPORTED_TX=body;done=true;rtLoaded=false;updateFoyer();if(loadCreds()){show('home');}else{AFTER='home';show('setup');}if(TAURI&&SDK_PORT)agPost('/agency/compile',{kernel:IMPORTED_TX}).then(()=>agencyBoot()).catch(()=>{});}
+function loadCreds(){PROVIDER=localStorage.getItem('siry_provider')||'sdk';EFFORT=localStorage.getItem('siry_effort')||'high';if(PROVIDER==='sdk'){MODEL='';return SDK_READY;}if(PROVIDER==='codex'){MODEL=localStorage.getItem('siry_codexmodel')||'';return true;}APITYPE=localStorage.getItem('siry_apitype')||'openrouter';ENDPOINT=localStorage.getItem('siry_endpoint')||EP_DEFAULT[APITYPE]||'';KEY=localStorage.getItem('siry_apikey')||'';MODEL=localStorage.getItem('siry_apimodel')||'';return !!KEY;}
+function importKernelText(tx){const body=(tx||'').replace(/^\s*SIRY 显影 · 会话与内核\s*/,'').trim();if(!body){toast('这个文件是空的（只有标题）——它是在还没聊时导出的。换一个有内容的，或先聊一场。');return;}IMPORTED_TX=body;done=true;rtLoaded=false;updateFoyer();if(loadCreds()){show('home');}else{AFTER='home';show('setup');}if(TAURI)ensureSidecar().then(p=>{if(p)return agPost('/agency/compile',{kernel:IMPORTED_TX}).then(()=>agencyBoot());}).catch(()=>{});}
 $('impf').onchange=ev=>{const f=ev.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>importKernelText(rd.result||'');rd.readAsText(f);};
 $('impLabel').onclick=async()=>{
   if(TAURI&&window.__TAURI__.dialog){
@@ -820,6 +1005,13 @@ $('impLabel').onclick=async()=>{
 $('enter').onclick=async()=>{
   PROVIDER=$('provider').value;
   if(PROVIDER==='sdk'){if(!SDK_READY){$('sdkStat').textContent='先完成上面的下载/登录，再推门。';return;}localStorage.setItem('siry_provider','sdk');EFFORT=$('effort').value;localStorage.setItem('siry_effort',EFFORT);if(AFTER==='home'){AFTER='chat';show('home');return;}renderChips();show('about');return;}
+  if(PROVIDER==='codex'){
+    if(!CODEX_READY){toast('本机还没准备好 Codex。装上官方 Codex CLI、在终端跑一次 codex login，再回来点这张卡；或改用下面的 API Key。');return;}
+    MODEL=$('codexmodel').value.trim();localStorage.setItem('siry_codexmodel',MODEL);
+    localStorage.setItem('siry_provider','codex');EFFORT=$('effort').value;localStorage.setItem('siry_effort',EFFORT);
+    if(AFTER==='home'){AFTER='chat';show('home');return;}
+    renderChips();show('about');return;
+  }
   // API Key（openrouter / openai / anthropic / custom 统一一组）
   APITYPE=$('apitype').value;ENDPOINT=$('apiendpoint').value.trim().replace(/\/+$/,'');KEY=$('apikey').value.trim();MODEL=$('apimodel').value.trim();
   if(!ENDPOINT){toast('接口地址不能为空（选类型会自动填好）。');$('apiendpoint').focus();return;}
@@ -833,7 +1025,7 @@ $('enter').onclick=async()=>{
 };
 $('aboutSkip').onclick=()=>{ABOUT_HINT='';startSession();};
 $('aboutGo').onclick=()=>{ABOUT_HINT=buildAboutHint();startSession();};
-function startSession(){SDK_SESSION=null;const opener='（我推开门，在显影室里坐下了。请开始。）'+(ABOUT_HINT?('\n'+ABOUT_HINT):'');MSGS=[{role:'user',content:opener}];$('log').innerHTML='';show('chat');$('chat').classList.add('on');turn();}
+function startSession(){SDK_SESSION=null;CODEX_THREAD=null;const opener='（我推开门，在显影室里坐下了。请开始。）'+(ABOUT_HINT?('\n'+ABOUT_HINT):'');MSGS=[{role:'user',content:opener}];$('log').innerHTML='';show('chat');$('chat').classList.add('on');turn();}
 
 let ORM=null;
 async function orReason(id){try{if(!ORM){const r=await fetch('https://openrouter.ai/api/v1/models');const d=await r.json();ORM=(d&&d.data)||[];}const m=ORM.find(x=>x.id===id);if(!m)return null;return (m.supported_parameters||[]).some(p=>p==='reasoning'||p==='include_reasoning');}catch(e){return null;}}
@@ -869,7 +1061,17 @@ function appendRetryBubble(){
 }
 async function turn(){busy=true;$('send').disabled=true;if(PROVIDER!=='sdk')showTyping(true);let sdkFailed=false;try{const txt=await callLLM(SYS,MSGS);if(PROVIDER!=='sdk'){const live=liveBubble();await SiryStream.typewrite(txt,live.onText);live.done();}MSGS.push({role:'assistant',content:txt});}catch(e){if(PROVIDER==='sdk'){sdkFailed=true;}else{let m=(e&&e.message)||(typeof e==='string'?e:'')||'未知错误';let hint='。检查 key / 接口地址 / 模型 ID 再继续？';if(/401|403|invalid|unauthor|api.?key/i.test(String(m)))hint='。多半是 key 或接口地址不对——去设置里核对一下，或换一种类型。';MSGS.push({role:'assistant',content:'（出错了：'+m+hint+'）'});}}showTyping(false);busy=false;$('send').disabled=false;render();if(sdkFailed)appendRetryBubble();$('in').focus();}
 
-async function callLLM(system,messages){if(PROVIDER==='sdk')return callSdk(system,messages);return callApiKey(system,messages);}
+async function callLLM(system,messages){if(PROVIDER==='sdk')return callSdk(system,messages);if(PROVIDER==='codex')return callCodex(system,messages);return callApiKey(system,messages);}
+// Codex：首轮把人格塞进 prompt 开新会话，之后 resume 只发新的一句（省 token、保上下文）。
+// 与 callSdk 同构：主对话(SYS)才续会话；群星等一次性调用绝不复用美玲的 thread。
+async function callCodex(system,messages){
+  const latest=messages[messages.length-1];
+  const isMain=system===SYS;
+  const thread=isMain?(CODEX_THREAD||''):'';
+  const r=await inv('codex_chat',{system:thread?'':system,message:latest.content,thread,model:MODEL||''});
+  if(isMain&&r&&r.thread)CODEX_THREAD=r.thread;
+  return (r&&r.text)||'';
+}
 async function callSdk(system,messages){
   const latest=messages[messages.length-1];
   const isMain=system===SYS; // 只有美玲主对话用持续会话；群星(RT_SYS)等一律一次性，绝不 resume 美玲的 session
@@ -906,7 +1108,7 @@ async function callApiKey(system,messages){
   const d=await r.json();if(d.error)throw new Error((d.error&&d.error.message)||'API error');if(!d.choices||!d.choices[0])throw new Error('空回复（检查模型 ID / 接口地址）');return (d.choices[0].message.content||'').trim();
 }
 
-function cardHandlers(){return{onChoice:t=>{$('in').value=t;sendMsg();},onExportKernel:async t=>{$('exp').click();if(TAURI&&SDK_PORT){await agPost('/agency/compile',{kernel:t});agencyBoot();}}};}
+function cardHandlers(){return{onChoice:t=>{$('in').value=t;sendMsg();},onExportKernel:async t=>{$('exp').click();if(TAURI){const p=await ensureSidecar();if(p){await agPost('/agency/compile',{kernel:t});agencyBoot();}}}};}
 function liveBubble(){
   const log=$('log');
   const wrap=document.createElement('div');wrap.className='msg ml';
@@ -927,7 +1129,7 @@ function liveBubble(){
 function render(){const log=$('log');log.innerHTML='';MSGS.forEach((m,i)=>{if(i===0)return;const me=m.role==='user';const div=document.createElement('div');div.className='msg '+(me?'me':'ml');div.innerHTML=(me?'':'<div class="av">'+fig(38)+'</div>')+'<div>'+(me?'':'<div class="nm">美玲</div>')+'<div class="bub"></div></div>';const bubEl=div.querySelector('.bub');if(me){bubEl.textContent=m.content;}else{SiryCards.renderInto(bubEl,m.content,cardHandlers());}log.appendChild(div);});log.scrollTop=log.scrollHeight;}
 function showTyping(on){let t=$('typing');if(on){if(!t){t=document.createElement('div');t.id='typing';t.className='typing';t.textContent='美玲 正在显影……';$('log').appendChild(t);$('log').scrollTop=$('log').scrollHeight;}}else if(t)t.remove();}
 
-function updateFoyer(){const f=$('foyer');if(done){f.classList.remove('locked');$('rtLbl').textContent='推开这扇门 · 看群星如何聊你';$('foyerHd').innerHTML='门后，是刚才那群人在聊今天的你。<br>想看就推，不想看它也一直在。';}else{$('rtLbl').textContent='（这扇门还暗着）';}}
+function updateFoyer(){const f=$('foyer');if(done){f.classList.remove('locked');$('rtLbl').textContent='推开这扇门 · 看群星如何聊你';$('foyerHd').innerHTML='门后，是刚才那群人在聊今天的你。<br>想看就推，不想看它也一直在。';if(TAURI&&$('mirrorDoor'))$('mirrorDoor').style.display='inline-flex';}else{$('rtLbl').textContent='（这扇门还暗着）';}}
 
 let ABOUT_HINT='';
 const ABOUT_GROUPS=[
@@ -1009,25 +1211,30 @@ async function openSoulMap(){
   }
 }
 
-async function agencyBoot(){ // sidecar 就绪/内核变更时刷新日课门：调用点 = checkSdk 成功尾部、内核导出、内核导入
+async function agencyBoot(){ // sidecar 就绪/内核变更时刷新各扇门：调用点 = checkSdk 成功尾部、内核导出、内核导入、启动引导、镜子开门
   if(!TAURI||!SDK_PORT)return;
+  const sdkMode=(localStorage.getItem('siry_provider')||PROVIDER)==='sdk';
   try{
     const st=await fetch(agBase()+'/agency/status'+agQ()).then(r=>r.json());
     refreshDaemonUI();loadDeliveryUI();
     if(!st.hasPack)return; // 未编译过 Soul-pack：门不亮
-    if(!localStorage.getItem('siry_daemon_init')){localStorage.setItem('siry_daemon_init','1');inv('daemon_enable',{hour:8,workspace:AGENCY_WS}).catch(()=>{});}
-    if(!localStorage.getItem('siry_consent_shown')){
-      const c=await firstConsentCard();
-      localStorage.setItem('siry_consent_shown','1');
-      await agPost('/agency/consent',{signals:c});
+    if($('mirrorDoor'))$('mirrorDoor').style.display='inline-flex';
+    let stFinal=st;
+    if(sdkMode){
+      if(!localStorage.getItem('siry_daemon_init')){localStorage.setItem('siry_daemon_init','1');inv('daemon_enable',{hour:8,workspace:AGENCY_WS}).catch(()=>{});}
+      if(!localStorage.getItem('siry_consent_shown')){
+        const c=await firstConsentCard();
+        localStorage.setItem('siry_consent_shown','1');
+        await agPost('/agency/consent',{signals:c});
+      }
+      if(!st.ranToday){$('dailyLbl').textContent='今日显影 · 正在冲洗…';$('dailyDoor').style.display='inline-flex';
+        await agPost('/agency/run',{}).catch(e=>{$('dailyLbl').textContent='今日暗房无光（点击重试）';});
+      }
+      stFinal=await fetch(agBase()+'/agency/status'+agQ()).then(r=>r.json());
+      if(stFinal.reportToday){$('dailyDoor').style.display='inline-flex';$('dailyLbl').textContent='今日显影 · 已冲洗好';}
     }
-    if(!st.ranToday){$('dailyLbl').textContent='今日显影 · 正在冲洗…';$('dailyDoor').style.display='inline-flex';
-      await agPost('/agency/run',{}).catch(e=>{$('dailyLbl').textContent='今日暗房无光（点击重试）';});
-    }
-    const st2=await fetch(agBase()+'/agency/status'+agQ()).then(r=>r.json());
-    if(st2.reportToday){$('dailyDoor').style.display='inline-flex';$('dailyLbl').textContent='今日显影 · 已冲洗好';}
     fetch(agBase()+'/agency/soulmap'+agQ()).then(r=>r.json()).then(m=>{if(m&&m.hasMap&&m.nodes.length)$('mapDoor').style.display='inline-flex';}).catch(()=>{});
-    if(st2.pendingDelta)showDeltaCard();
+    if(stFinal.pendingDelta)showDeltaCard();
   }catch(e){/* sidecar 未起或无 pack：静默 */}
 }
 

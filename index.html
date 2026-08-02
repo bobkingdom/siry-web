@@ -115,7 +115,7 @@ body{font-family:var(--sans);font-weight:300;color:var(--ink);-webkit-font-smoot
 b{font-weight:500}
 /* #about 与 #setup/#settings 同一套卡片语言（同底色/同 0.5px 描边/同 22px 圆角），
    卡内只有一条对齐纪律：标题·副标·按钮居中，组标签与 chips 左对齐。 */
-#about .box{background:var(--panel);border:0.5px solid var(--line);border-radius:22px;padding:34px 32px;text-align:center}
+#about .box{margin:0 auto;background:var(--panel);border:0.5px solid var(--line);border-radius:22px;padding:34px 32px;text-align:center}
 #about h2{font-family:var(--serif);font-weight:400;font-size:23px;margin:0 0 10px}
 #chipsWrap{text-align:left;margin-top:24px}
 #chipsWrap .grp{margin:0 0 22px}
@@ -225,6 +225,7 @@ b{font-weight:500}
       <span class="lbl">推开这扇门 · 与美玲同行</span>
     </button>
     <div class="meta">约 20 分钟 · 只有你和美玲 · 随时可停</div>
+    <div class="meta" id="inviteNote" style="display:none">这是一张邀请卡——胶卷钱朋友已经替你付了，直接推门就好。<br>（对话仍是你和美玲直连服务商；对方能看到用了多少额度，看不到你聊了什么。）</div>
   </div>
 
   <div class="foyer locked" id="foyer">
@@ -756,6 +757,25 @@ const RT_SYS = `你是 SIRY「群星旁听席」的导演。下面会给你一�
 
 // 迁移旧接法布局 → 统一 apikey（老用户 localStorage 平滑过渡；cli 已移除，回落账号）
 (function(){const p=localStorage.getItem('siry_provider');if(p==='openrouter'||p==='anthropic'){localStorage.setItem('siry_provider','apikey');localStorage.setItem('siry_apitype',p);if(localStorage.getItem('siry_apikey')==null)localStorage.setItem('siry_apikey',localStorage.getItem(p==='anthropic'?'siry_akey':'siry_orkey')||'');if(localStorage.getItem('siry_apimodel')==null)localStorage.setItem('siry_apimodel',localStorage.getItem(p==='anthropic'?'siry_amodel':'siry_ormodel')||'');}else if(p==='cli'){localStorage.setItem('siry_provider','sdk');}})();
+// 邀请链接：siry-web.onrender.com/#k=<key>[&m=<model>][&t=<type>]
+// key 藏在 fragment 里——'#' 之后的内容浏览器从不发给服务器，render 的访问日志里也没有。
+// 读到即存进本机 localStorage 并立刻抹掉地址栏（history.replaceState，不留在历史里），
+// 朋友点开就能直接聊，不必懂 endpoint/model。必须跑在读 PROVIDER 之前。
+const INVITED=(function(){
+  try{
+    const h=location.hash||'';if(h.indexOf('k=')<0)return false;
+    const p=new URLSearchParams(h.slice(1));
+    const k=(p.get('k')||'').trim();if(!k)return false;
+    const t=(p.get('t')||'openrouter').trim();
+    localStorage.setItem('siry_provider','apikey');
+    localStorage.setItem('siry_apitype',t);
+    localStorage.setItem('siry_apikey',k);
+    localStorage.setItem('siry_apimodel',(p.get('m')||'anthropic/claude-sonnet-4.6').trim());
+    localStorage.removeItem('siry_endpoint'); // 用该类型的官方默认地址，别沿用上一个人的中转
+    history.replaceState(null,'',location.pathname+location.search);
+    return true;
+  }catch(e){return false;}
+})();
 let PROVIDER=localStorage.getItem('siry_provider')||'sdk';
 let APITYPE=localStorage.getItem('siry_apitype')||'openrouter';
 let ENDPOINT=localStorage.getItem('siry_endpoint')||'';
@@ -986,6 +1006,12 @@ $('codexmodel').value=localStorage.getItem('siry_codexmodel')||'';
 if(!TAURI){['cardSub','cardCodex'].forEach(id=>{const c=$(id);if(c)c.style.display='none';});if(!localStorage.getItem('siry_provider'))$('provider').value='apikey';}
 pickProvider($('provider').value||'sdk');
 updateFoyer();
+// 被邀请者：凭证已就位，门厅那扇门直接进「关于你」，不再让人面对 endpoint/model 表单。
+if(INVITED){
+  const n=$('inviteNote');if(n)n.style.display='block';
+  const d=document.querySelector('#home .hero .doorbtn');
+  if(d)d.onclick=()=>{renderChips();show('about');};
+}
 if(TAURI&&(localStorage.getItem('siry_provider')||'sdk')!=='sdk'){ensureSidecar().then(p=>{if(p)agencyBoot();}).catch(()=>{});}
 
 function loadCreds(){PROVIDER=localStorage.getItem('siry_provider')||'sdk';EFFORT=localStorage.getItem('siry_effort')||'high';if(PROVIDER==='sdk'){MODEL='';return SDK_READY;}if(PROVIDER==='codex'){MODEL=localStorage.getItem('siry_codexmodel')||'';return true;}APITYPE=localStorage.getItem('siry_apitype')||'openrouter';ENDPOINT=localStorage.getItem('siry_endpoint')||EP_DEFAULT[APITYPE]||'';KEY=localStorage.getItem('siry_apikey')||'';MODEL=localStorage.getItem('siry_apimodel')||'';return !!KEY;}

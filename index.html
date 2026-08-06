@@ -188,6 +188,7 @@ b{font-weight:500}
 .ob-card .ob-tag{display:inline-block;margin-left:6px;font-size:11px;color:var(--door);border:0.5px solid rgba(255,217,160,.4);border-radius:20px;padding:1px 9px}
 #advBox{margin-top:8px;padding:12px 0 0}
 #advToggle{font-family:var(--sans);font-size:12.5px;color:var(--ink3);cursor:pointer;opacity:.8;margin-top:14px;user-select:none}
+#setup .linkbtn{background:none;border:none;color:var(--door);cursor:pointer;font-size:12px;text-decoration:underline;padding:0;font-family:var(--sans)}
 .adv-pick.on{border-color:var(--door);color:var(--door);background:rgba(255,200,140,.10)}
 
 #mirror .mr-q{font-size:13px;color:var(--ink3);margin-top:6px}
@@ -294,7 +295,9 @@ b{font-weight:500}
     <label>API Key</label>
     <input id="apikey" type="password" placeholder="粘贴你的 key" autocomplete="off">
     <label>模型</label>
-    <input id="apimodel" type="text" placeholder="如 anthropic/claude-sonnet-4.6" autocomplete="off">
+    <select id="apimodelsel"><option value="">正在读取可用模型…</option></select>
+    <input id="apimodel" type="text" placeholder="如 anthropic/claude-sonnet-4.6" autocomplete="off" style="display:none">
+    <div class="note" id="apimodelnote" style="margin-top:6px"></div>
   </div>
   <div id="advToggle">推理深度 ›</div>
   <div id="advBox" style="display:none">
@@ -982,8 +985,65 @@ function fig(sz){const c='#ffd9a0',g='#fff0d4';
 
 $('provider').value=(PROVIDER==='sdk'?'sdk':'apikey');$('apitype').value=APITYPE;$('apikey').value=localStorage.getItem('siry_apikey')||'';$('apimodel').value=localStorage.getItem('siry_apimodel')||'';$('effort').value=EFFORT;
 function apiModelHint(t){const ph={openrouter:'如 anthropic/claude-sonnet-4.6 · openai/o3',openai:'如 gpt-5 · o3',anthropic:'如 claude-sonnet-4-6 · claude-opus-4-8',custom:'你的模型名'};if($('apimodel'))$('apimodel').placeholder=ph[t]||'模型名';}
-function syncEndpoint(){const t=$('apitype').value;const stored=localStorage.getItem('siry_endpoint')||'';$('apiendpoint').value=stored||EP_DEFAULT[t]||'';apiModelHint(t);}
-function onApiType(){const t=$('apitype').value;$('apiendpoint').value=EP_DEFAULT[t]||'';apiModelHint(t);}
+
+// —— 模型清单：按类型现拉各家 /models，让人「选」而不是背模型 ID ——
+// 三家实测都回 access-control-allow-origin:*，浏览器可直连；自定义中转不保证，读不到即回落手填。
+const MODEL_PREF=['anthropic/claude-sonnet-4.6','anthropic/claude-opus-4.8','openai/o3','google/gemini-2.5-pro','deepseek/deepseek-r1','claude-sonnet-4-6','claude-opus-4-8','gpt-5','o3'];
+let MODEL_MANUAL=false, MODEL_REQ=0;
+function modelValue(){return ((MODEL_MANUAL?$('apimodel').value:$('apimodelsel').value)||'').trim();}
+function mdNote(text,actions){const n=$('apimodelnote');if(!n)return;n.textContent=text||'';
+  (actions||[]).forEach(([label,fn])=>{if(n.textContent)n.appendChild(document.createTextNode(' · '));
+    const b=document.createElement('button');b.type='button';b.className='linkbtn';b.textContent=label;b.onclick=fn;n.appendChild(b);});}
+function setModelManual(on){MODEL_MANUAL=on;$('apimodel').style.display=on?'block':'none';$('apimodelsel').style.display=on?'none':'block';
+  if(on&&!$('apimodel').value)$('apimodel').value=$('apimodelsel').value||'';}
+async function fetchModelList(t,base,key){
+  const b=(base||EP_DEFAULT[t]||'').replace(/\/+$/,'');
+  if(t==='anthropic'){
+    const r=await fetch(b+'/v1/models?limit=200',{headers:{'x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'}});
+    const d=await r.json();if(d.error)throw new Error(d.error.message||('HTTP '+r.status));
+    return (d.data||[]).map(m=>({id:m.id,name:m.display_name||m.id}));
+  }
+  if(t==='openrouter'){
+    const r=await fetch(b+'/models');const d=await r.json();if(d.error)throw new Error((d.error&&d.error.message)||('HTTP '+r.status));
+    // 只列支持推理的：SIRY 很依赖推理深度，非推理模型会让美玲变浅、押不准
+    return (d.data||[]).filter(m=>(m.supported_parameters||[]).some(p=>p==='reasoning'||p==='include_reasoning')).map(m=>({id:m.id,name:m.name||m.id}));
+  }
+  const r=await fetch(b+'/models',{headers:{authorization:'Bearer '+key}});
+  const d=await r.json();if(d.error)throw new Error((d.error&&d.error.message)||('HTTP '+r.status));
+  let l=(d.data||[]).map(m=>({id:m.id,name:m.id}));
+  if(t==='openai')l=l.filter(m=>/^(gpt-|o[1-9]|chatgpt-)/i.test(m.id)&&!/(embed|whisper|tts|dall-e|moderation|audio|realtime|image|transcribe|search|instruct)/i.test(m.id));
+  return l;
+}
+async function loadModels(){
+  if(MODEL_MANUAL)return;
+  const t=$('apitype').value,key=$('apikey').value.trim(),sel=$('apimodelsel');
+  const want=(localStorage.getItem('siry_apimodel')||'').trim();
+  const toManual=()=>{setModelManual(true);if(want&&!$('apimodel').value)$('apimodel').value=want;
+    mdNote('手填模式',[['回到列表',()=>{setModelManual(false);loadModels();}]]);};
+  if(t!=='openrouter'&&!key){  // 这两家要 key 才给清单
+    sel.innerHTML='<option value="">↑ 先把上面的 API Key 填好</option>';
+    mdNote('填好 key，这里会自动列出你能用的模型。',[['手动填',toManual]]);return;
+  }
+  const my=++MODEL_REQ;
+  sel.innerHTML='<option value="">正在读取可用模型…</option>';mdNote('');
+  let list=null,err=null;
+  try{list=await fetchModelList(t,$('apiendpoint').value.trim(),key);}catch(e){err=e;}
+  if(my!==MODEL_REQ)return;  // 竞态：连点/连改只认最后一次
+  if(!list||!list.length){
+    setModelManual(true);if(want&&!$('apimodel').value)$('apimodel').value=want;
+    mdNote(err?('没读到模型清单（'+((err.message||err)+'').slice(0,80)+'）——先手填一个。'):'这个地址没返回模型清单——先手填一个。',
+      [['再试一次',()=>{setModelManual(false);loadModels();}]]);return;
+  }
+  if(want&&!list.some(m=>m.id===want))list.unshift({id:want,name:want+'（你原来选的）'}); // 别把邀请卡/上次的选择挤掉
+  const rank=i=>{const k=MODEL_PREF.indexOf(i);return k<0?999:k;};
+  list.sort((a,b)=>rank(a.id)-rank(b.id)||a.id.localeCompare(b.id));
+  sel.innerHTML='';
+  list.forEach(m=>{const o=document.createElement('option');o.value=m.id;o.textContent=(m.name&&m.name!==m.id)?(m.name+'（'+m.id+'）'):m.id;sel.appendChild(o);});
+  sel.value=(list.find(m=>m.id===want)||list.find(m=>MODEL_PREF.includes(m.id))||list[0]).id;
+  mdNote('列出 '+list.length+' 个可用模型'+(t==='openrouter'?'（只列支持推理的）':''),[['重读',loadModels],['手动填',toManual]]);
+}
+function syncEndpoint(){const t=$('apitype').value;const stored=localStorage.getItem('siry_endpoint')||'';$('apiendpoint').value=stored||EP_DEFAULT[t]||'';apiModelHint(t);loadModels();}
+function onApiType(){const t=$('apitype').value;$('apiendpoint').value=EP_DEFAULT[t]||'';apiModelHint(t);setModelManual(false);loadModels();}
 syncEndpoint();
 function toggleProvider(){const p=$('provider').value;$('apiBox').style.display=p==='apikey'?'block':'none';$('sdkBox').style.display=p==='sdk'?'block':'none';$('codexBox').style.display=p==='codex'?'block':'none';if(p==='sdk')checkSdk();if(p==='apikey')syncEndpoint();if(p==='codex')checkCodex();}
 function pickProvider(p){$('provider').value=p;toggleProvider();
@@ -1001,6 +1061,8 @@ async function checkCodex(){const st=$('codexStat');
   }catch(e){CODEX_READY=false;st.textContent='检查 Codex 出错：'+e;}}
 $('advToggle').onclick=()=>{const b=$('advBox');b.style.display=b.style.display==='none'?'block':'none';};
 $('provider').onchange=toggleProvider;$('apitype').onchange=onApiType;
+$('apikey').onchange=()=>loadModels();          // 粘完 key 就去拉这把 key 能用的模型
+$('apiendpoint').onchange=()=>loadModels();     // 换了中转地址，清单也跟着换
 $('codexmodel').value=localStorage.getItem('siry_codexmodel')||'';
 // 网页版：两条「本机账号」路都要桌面版（一个要 sidecar，一个要本机 codex 进程）
 if(!TAURI){['cardSub','cardCodex'].forEach(id=>{const c=$(id);if(c)c.style.display='none';});if(!localStorage.getItem('siry_provider'))$('provider').value='apikey';}
@@ -1039,10 +1101,10 @@ $('enter').onclick=async()=>{
     renderChips();show('about');return;
   }
   // API Key（openrouter / openai / anthropic / custom 统一一组）
-  APITYPE=$('apitype').value;ENDPOINT=$('apiendpoint').value.trim().replace(/\/+$/,'');KEY=$('apikey').value.trim();MODEL=$('apimodel').value.trim();
+  APITYPE=$('apitype').value;ENDPOINT=$('apiendpoint').value.trim().replace(/\/+$/,'');KEY=$('apikey').value.trim();MODEL=modelValue();
   if(!ENDPOINT){toast('接口地址不能为空（选类型会自动填好）。');$('apiendpoint').focus();return;}
   if(!KEY){toast('先粘一个 API Key 再推门。');$('apikey').focus();return;}
-  if(!MODEL){toast('填一个模型名再推门。');$('apimodel').focus();return;}
+  if(!MODEL){toast('选一个模型再推门。');(MODEL_MANUAL?$('apimodel'):$('apimodelsel')).focus();return;}
   localStorage.setItem('siry_provider','apikey');localStorage.setItem('siry_apitype',APITYPE);localStorage.setItem('siry_endpoint',ENDPOINT);localStorage.setItem('siry_apikey',KEY);localStorage.setItem('siry_apimodel',MODEL);
   EFFORT=$('effort').value;localStorage.setItem('siry_effort',EFFORT);
   if(APITYPE==='openrouter'){const e=$('enter');e.disabled=true;e.textContent='检测模型…';const ok=await orReason(MODEL);e.disabled=false;e.textContent='推开这扇门 →';if(ok!==true){showConsent(MODEL,ok===false);return;}}
@@ -1065,7 +1127,7 @@ function openDialog({title,bodyHtml,goText,backText,onGo,onBack}){
   $('cBack').onclick=()=>{$('consent').classList.remove('on');Promise.resolve().then(onBack).catch(()=>{});};
   $('consent').classList.add('on');
 }
-function showConsent(model,no){openDialog({title:no?'这个模型不是推理模型':'没认出这个模型',bodyHtml:(no?'你选的 <b>'+esc(model)+'</b> 似乎<b>不支持推理</b>。':'没在 OpenRouter 列表里认出 <b>'+esc(model)+'</b>。')+'<br><br>SIRY 很依赖推理深度——非推理模型会让美玲变浅、押不准。建议换一个推理模型（如 anthropic/claude-sonnet-4.6 · openai/o3 · google/gemini-2.5-pro · deepseek/deepseek-r1）。',goText:'仍要继续',backText:'换一个模型',onGo:()=>{renderChips();show('about');},onBack:()=>{$('apimodel').focus();}});}
+function showConsent(model,no){openDialog({title:no?'这个模型不是推理模型':'没认出这个模型',bodyHtml:(no?'你选的 <b>'+esc(model)+'</b> 似乎<b>不支持推理</b>。':'没在 OpenRouter 列表里认出 <b>'+esc(model)+'</b>。')+'<br><br>SIRY 很依赖推理深度——非推理模型会让美玲变浅、押不准。建议换一个推理模型（如 anthropic/claude-sonnet-4.6 · openai/o3 · google/gemini-2.5-pro · deepseek/deepseek-r1）。',goText:'仍要继续',backText:'换一个模型',onGo:()=>{renderChips();show('about');},onBack:()=>{(MODEL_MANUAL?$('apimodel'):$('apimodelsel')).focus();}});}
 
 $('send').onclick=sendMsg;
 $('in').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}});

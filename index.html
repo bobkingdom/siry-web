@@ -141,6 +141,7 @@ b{font-weight:500}
 .scard-opt{font-family:var(--sans);font-size:13.5px;color:var(--ink);background:rgba(0,0,0,.18);border:0.5px solid var(--line);border-radius:20px;padding:8px 14px;cursor:pointer;transition:.2s}
 .scard-opt:hover{border-color:var(--door);box-shadow:0 0 14px var(--glow)}
 .scard-opt:disabled{opacity:.4;cursor:default;box-shadow:none;border-color:var(--line)}
+.btn:disabled,.solid:disabled,.ghost:disabled,#setup input:disabled,#setup select:disabled{opacity:.45;cursor:default;box-shadow:none}
 /* 群星 loading：星座缓缓聚拢 + 双语大师语录轮播 */
 #rtBody .rtl{display:flex;flex-direction:column;align-items:center;padding-top:8px;white-space:normal}
 #rtBody .rtl-const{width:min(560px,92%);height:auto;margin:6px 0 4px}
@@ -626,8 +627,9 @@ b{font-weight:500}
     return { frames, rest };
   }
 
-  function chat({ port, system, message, sessionId, effort, ui }) {
+  function chat({ port, token, system, message, sessionId, effort, ui }) {
     const base = `http://127.0.0.1:${port}`;
+    const tq = token ? `t=${encodeURIComponent(token)}` : '';   // 本机令牌：sidecar 只认带它的请求
     return new Promise(async (resolve, reject) => {
       let full = '', shown = '', backlog = '';
       let done = false, sid = sessionId ?? null;
@@ -639,7 +641,7 @@ b{font-weight:500}
 
       let r;
       try {
-        r = await fetch(`${base}/chat/send`, { method: 'POST', headers: { 'content-type': 'application/json' },
+        r = await fetch(`${base}/chat/send?${tq}`, { method: 'POST', headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ system, message, sessionId: sid ?? undefined, effort }) }).then(x => x.json());
       } catch (e) { clearInterval(waitTimer); return reject(new Error('sidecar 不可达：' + e.message)); }
       if (!r.requestId) { clearInterval(waitTimer); return reject(new Error(r.error || 'send 失败')); }
@@ -693,7 +695,7 @@ b{font-weight:500}
 
       let resp;
       try {
-        resp = await fetch(`${base}/chat/stream?requestId=${r.requestId}`, { headers: { accept: 'text/event-stream' } });
+        resp = await fetch(`${base}/chat/stream?requestId=${r.requestId}&${tq}`, { headers: { accept: 'text/event-stream' } });
       } catch (e) { clearInterval(waitTimer); return reject(new Error('流打不开：' + e.message)); }
       if (!resp.ok) { clearInterval(waitTimer); return reject(new Error('流打不开 HTTP ' + resp.status)); }
 
@@ -786,6 +788,8 @@ const EP_DEFAULT={openrouter:'https://openrouter.ai/api/v1',openai:'https://api.
 const TAURI = !!(window.__TAURI__ && window.__TAURI__.core);
 const inv=TAURI?window.__TAURI__.core.invoke:async()=>{throw new Error('需要 SIRY 桌面端');};
 let SDK_PORT=null, SDK_SESSION=null, SDK_READY=false;
+let SDK_TOKEN='';  // 本机一次性令牌：sidecar 只认带它的请求，挡掉浏览器里其它页面的端口扫描
+const tokQ=()=>SDK_TOKEN?('t='+encodeURIComponent(SDK_TOKEN)):'';
 let CODEX_THREAD=null; // Codex 订阅会话（resume 续聊用），与 SDK_SESSION 同生命周期
 // TAURI 下不分接法拉起 sidecar：它管内核/地图/账本这些文件，跟 Claude 登录无关（T1 已懒加载 SDK）。
 // 无 node 运行时返回 null（调用方自行引导 node-only 下载），绝不 throw。
@@ -795,7 +799,7 @@ async function ensureSidecar(){
   try{
     const rs=await inv('runtime_status');
     if(!rs.node)return null;
-    SDK_PORT=await inv('sidecar_start');
+    {const si=await inv('sidecar_start');SDK_PORT=si.port;SDK_TOKEN=si.token;}
     return SDK_PORT;
   }catch(e){return null;}
 }
@@ -817,8 +821,8 @@ async function checkSdk(){
       return;
     }
     st.textContent='运行时已就绪，正在启动…';
-    SDK_PORT=await inv('sidecar_start');
-    const a=await fetch(`http://127.0.0.1:${SDK_PORT}/auth/status`).then(r=>r.json());
+    {const si=await inv('sidecar_start');SDK_PORT=si.port;SDK_TOKEN=si.token;}
+    const a=await fetch(`http://127.0.0.1:${SDK_PORT}/auth/status?${tokQ()}`).then(r=>r.json());
     if(a.authenticated){SDK_READY=true;st.textContent='已登录 ✓ '+(a.account||'')+' —— 对话只去 Anthropic，不经任何第三方。';act.style.display='none';agencyBoot();}
     else{
       st.textContent='还没登录 Claude 账号。';
@@ -826,10 +830,10 @@ async function checkSdk(){
       act.onclick=async()=>{
         act.disabled=true;act.textContent='等待浏览器授权…';
         try{
-          const s=await fetch(`http://127.0.0.1:${SDK_PORT}/auth/start`,{method:'POST'}).then(r=>r.json());
+          const s=await fetch(`http://127.0.0.1:${SDK_PORT}/auth/start?${tokQ()}`,{method:'POST'}).then(r=>r.json());
           if(!s.url)throw new Error('未取得登录链接');
           window.__TAURI__.opener?window.__TAURI__.opener.openUrl(s.url):window.open(s.url);
-          const w=await fetch(`http://127.0.0.1:${SDK_PORT}/auth/wait`).then(r=>r.json());
+          const w=await fetch(`http://127.0.0.1:${SDK_PORT}/auth/wait?${tokQ()}`).then(r=>r.json());
           if(!w.authenticated)throw new Error('授权未完成');
         }catch(err){st.textContent='登录失败：'+err.message;act.disabled=false;act.textContent='用 Claude 账号登录';return;}
         act.disabled=false;checkSdk();
@@ -866,11 +870,9 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('settings')&&$('s
 let MR={sys:null,roots:[],judged:0,verdicts:[],busy:false,pendingRoot:null};
 const MR_MAX=3;
 function mrRootOf(text){const m=(text||'').match(/【根据[:：]\s*([^】]+)】/);return m?m[1].trim():null;}
-function sessionKernelText(){
-  if(IMPORTED_TX)return IMPORTED_TX;
-  const t=MSGS.slice(1).map(m=>(m.role==='user'?'我：':'美玲：')+m.content).join('\n\n').trim();
-  return t||null;
-}
+// 只认真正的内核：导入的内核全文。绝不拿原始聊天记录顶替——
+// SOUL.md 的「你是谁」应当是提炼过的内核，喂进未经提炼的转录会让分身照着流水账演。
+function sessionKernelText(){ return IMPORTED_TX||null; }
 async function mrEnsureRuntime(host){
   try{const rs=await inv('runtime_status');if(rs.node)return true;}catch(e){host.innerHTML='<div class="note">读运行时状态失败：'+esc(String(e))+'</div>';return false;}
   host.innerHTML='<div class="note">第一次照镜子要装一个小引擎（约 50MB，来自 Node 官方源，只下这一次；它只在你本机跑）。</div><button class="btn" type="button" id="mrDl">装上镜子的引擎</button><div id="mrProg" class="note" style="display:none"></div>';
@@ -879,7 +881,7 @@ async function mrEnsureRuntime(host){
       $('mrDl').style.display='none';const pr=$('mrProg');pr.style.display='block';pr.textContent='正在准备…';
       const un=await window.__TAURI__.event.listen('runtime:progress',e=>{const x=e.payload;pr.textContent='正在擦亮镜子… '+(x.pct||0).toFixed(0)+'%';});
       try{await inv('runtime_download',{scope:'node'});un();resolve(true);}
-      catch(err){un();pr.textContent='下载失败：'+esc(String(err))+'。回门厅重进再试。';resolve(false);}
+      catch(err){un();pr.textContent='下载失败：'+String(err)+'。回门厅重进再试。';resolve(false);}
     };
   });
 }
@@ -889,12 +891,15 @@ async function openMirror(){
   let p=await ensureSidecar();
   if(!p){
     const ok=await mrEnsureRuntime(body);if(!ok)return;
-    try{SDK_PORT=await inv('sidecar_start');p=SDK_PORT;}catch(e){body.innerHTML='<div class="note">引擎没起来：'+esc(String(e))+'。回门厅重进再试。</div>';return;}
+    try{{const si=await inv('sidecar_start');SDK_PORT=si.port;SDK_TOKEN=si.token;}p=SDK_PORT;}catch(e){body.innerHTML='<div class="note">引擎没起来：'+esc(String(e))+'。回门厅重进再试。</div>';return;}
   }
   let sys=await fetch(agBase()+'/mirror/system'+agQ()).then(r=>r.json()).catch(()=>null);
   if(sys&&sys.error){const k=sessionKernelText();
     if(k){await agPost('/agency/compile',{kernel:k}).catch(()=>{});sys=await fetch(agBase()+'/mirror/system'+agQ()).then(r=>r.json()).catch(()=>null);}}
-  if(!sys||sys.error||!sys.system){body.innerHTML='<div class="note">'+esc((sys&&sys.error)||'镜子没接上——回门厅重进再试。')+'</div>';return;}
+  if(!sys||sys.error||!sys.system){
+    const noKernel=sys&&sys.error&&/内核/.test(sys.error);
+    body.innerHTML='<div class="note">'+esc(noKernel?'还没有内核可照——回门厅和美玲聊完一场，等她递出内核卡（点「带走这份内核」）；或在门厅导入一份已有内核。':((sys&&sys.error)||'镜子没接上——回门厅重进再试。'))+'</div>'
+      +'<div style="margin-top:14px"><button class="ghost" type="button" onclick="show(\'home\')">回门厅</button></div>';return;}
   MR={sys:sys.system,roots:sys.roots||[],judged:0,verdicts:[],busy:false,pendingRoot:null};
   agencyBoot();
   mrRenderAsk();
@@ -948,8 +953,11 @@ async function mrJudge(verdict,correction){
   let r=null;
   try{r=await agPost('/mirror/judge',{root:MR.pendingRoot||'（未标根）',verdict,...(correction?{correction}:{})});}catch(e){}
   if(!r||r.error){
-    toast('这次判定没存上'+(r&&r.error?('：'+r.error):'')+'——不算数，可以重判。');
+    const busy=r&&r.error&&/显影正在进行|另一场/.test(r.error);   // 当天首开时日课在后台冲洗、持着同一把锁
+    toast(busy?'日课正在后台冲洗（它和镜子共用一把锁）——等一下再判这一答，不算数。'
+              :('这次判定没存上'+(r&&r.error?('：'+r.error):'')+'——不算数，可以重判。'));
     const h=$('mrHit'),m=$('mrMiss');if(h)h.disabled=false;if(m)m.disabled=false;   // 落盘失败：允许重判，不假装成功
+    const cb=$('mrCorr');if(cb)cb.style.display='none';                             // 收起补充框，别留两套重试并存
     return;
   }
   MR.verdicts.push({root:MR.pendingRoot,verdict,deltaProposed:!!r.deltaProposed,rootMatched:!!r.rootMatched,corrected:!!correction});
@@ -1165,7 +1173,7 @@ async function callSdk(system,messages){
   const isMain=system===SYS; // 只有美玲主对话用持续会话；群星(RT_SYS)等一律一次性，绝不 resume 美玲的 session
   const live=liveBubble();
   try{
-    const args={port:SDK_PORT,system,message:latest.content,sessionId:isMain?SDK_SESSION:null,effort:EFFORT,ui:live};
+    const args={port:SDK_PORT,token:SDK_TOKEN,system,message:latest.content,sessionId:isMain?SDK_SESSION:null,effort:EFFORT,ui:live};
     let out;
     try{
       out=await SiryStream.chat(args);
@@ -1242,8 +1250,8 @@ function buildAboutHint(){const parts=[];ABOUT_GROUPS.forEach(g=>{const v=ABOUT_
 let AGENCY_WS=localStorage.getItem('siry_agency_ws')||'';
 let AG_ITEMS=[],AG_HTML='';
 const agBase=()=>`http://127.0.0.1:${SDK_PORT}`;
-const agQ=()=>AGENCY_WS?`?workspace=${encodeURIComponent(AGENCY_WS)}`:'?workspace=';
-async function agPost(p,body){return fetch(agBase()+p,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({workspace:AGENCY_WS,...body})}).then(r=>r.json());}
+const agQ=()=>`?workspace=${encodeURIComponent(AGENCY_WS||'')}&${tokQ()}`;
+async function agPost(p,body){return fetch(agBase()+p+agQ(),{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({workspace:AGENCY_WS,...body})}).then(r=>r.json());}
 
 $('agconsent').onchange=()=>{$('agAvoidBox').style.display=$('agconsent').value==='granular'?'block':'none';agPost('/agency/consent',{signals:$('agconsent').value,avoidTopics:$('agavoid').value.split('\n').map(x=>x.trim()).filter(Boolean)}).catch(()=>{});};
 $('agavoid').onchange=()=>{agPost('/agency/consent',{signals:$('agconsent').value,avoidTopics:$('agavoid').value.split('\n').map(x=>x.trim()).filter(Boolean)}).catch(()=>{});};
@@ -1301,7 +1309,7 @@ async function openSoulMap(){
 
 async function agencyBoot(){ // sidecar 就绪/内核变更时刷新各扇门：调用点 = checkSdk 成功尾部、内核导出、内核导入、启动引导、镜子开门
   if(!TAURI||!SDK_PORT)return;
-  const sdkMode=(localStorage.getItem('siry_provider')||PROVIDER)==='sdk';
+  const sdkMode=(localStorage.getItem('siry_provider')||($('provider')&&$('provider').value)||PROVIDER)==='sdk';
   try{
     const st=await fetch(agBase()+'/agency/status'+agQ()).then(r=>r.json());
     refreshDaemonUI();loadDeliveryUI();

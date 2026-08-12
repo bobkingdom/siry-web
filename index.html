@@ -1,4 +1,4 @@
-<!-- SIRY · 灵魂显影室 — 单文件网页版。浏览器（Chrome/Edge）打开，选「用 API Key」填 OpenRouter（或其它）key 即用。全部在你本机浏览器里跑，无 SIRY 服务器。 -->
+<!-- SIRY · 灵魂显影室 — 单文件网页版。浏览器（Chrome/Edge）打开即用：自带 key（OpenRouter/Anthropic/OpenAI…）走直连、全在你本机浏览器里跑、无 SIRY 服务器；免注册「先试试」经 siry.ai 闸机转发（DeepSeek Flash，不留存对话）。 -->
 <!DOCTYPE html>
 <html lang="zh">
 <head>
@@ -259,8 +259,13 @@ b{font-weight:500}
   <select id="provider" style="display:none">
     <option value="sdk">Claude 账号（推荐 · 免 key）</option>
     <option value="codex">ChatGPT 账号 · Codex 订阅（免 key）</option>
+    <option value="free">先试试（免注册）</option>
     <option value="apikey">API Key</option>
   </select>
+  <button type="button" class="ob-card" id="cardFree" style="display:none" onclick="pickProvider('free')">
+    <div style="font-size:22px;line-height:1.3">🕯️</div>
+    <div><div class="ob-t">先试试 · 免注册</div><div class="ob-d">轻一档的模型（DeepSeek Flash）· 经 siry.ai 闸机转发（不留存）· 每天三场。</div></div>
+  </button>
   <button type="button" class="ob-card" id="cardSub" onclick="pickProvider('sdk')">
     <div style="font-size:22px;line-height:1.3">🔑</div>
     <div><div class="ob-t">用我的 Claude 账号<span class="ob-tag">推荐 · macOS</span></div><div class="ob-d">登录一次，免填钥匙、免安装 —— 复用你已登录的 Claude。</div></div>
@@ -273,6 +278,10 @@ b{font-weight:500}
     <div style="font-size:22px;line-height:1.3">🗝️</div>
     <div><div class="ob-t">用 API Key</div><div class="ob-d">OpenRouter / OpenAI / Anthropic / 自定义中转 —— 有 key 就能用。</div></div>
   </button>
+  <div id="freeBox" style="display:none">
+    <div id="freeStat" style="font-size:12.5px;color:var(--ink3);margin:10px 0 4px;line-height:1.7">直接推门就好——第一次会做个几乎无感的人机确认。</div>
+    <div id="tsWidget" style="display:flex;justify-content:center"></div>
+  </div>
   <div id="sdkBox">
     <div id="sdkStat" style="font-size:12.5px;color:var(--ink3);margin:10px 0 4px;line-height:1.7">正在检查运行时…</div>
     <div id="sdkProg" style="display:none;margin:8px 0"><div style="height:6px;border-radius:3px;background:rgba(0,0,0,.25);overflow:hidden"><div id="sdkBar" style="height:100%;width:0%;background:var(--door);transition:width .3s"></div></div><div id="sdkProgTxt" class="note" style="margin-top:6px">正在准备暗房…</div></div>
@@ -306,7 +315,7 @@ b{font-weight:500}
     <select id="effort"><option value="high">高 · 推荐</option><option value="xhigh">很高</option><option value="max">最高</option></select>
   </div>
   <button class="btn" id="enter">推开这扇门 →</button>
-  <div class="note">· key 只存本机浏览器，仅用于直接调用你选的服务。<br>· 对话直连服务商，不经第三方、邀请你的人也看不到。</div>
+  <div class="note">· key 只存本机浏览器，仅用于直接调用你选的服务。<br>· 对话直连服务商，不经第三方、邀请你的人也看不到。<br>· 免注册体验走 siry.ai 闸机（不留存对话）；自带 key 仍是直连。</div>
 </div></div></div>
 
 <div class="scrn" id="settings"><div class="wrap"><div class="box">
@@ -855,7 +864,7 @@ function toast(msg, ms=4200){
 
 function show(id){document.querySelectorAll('.scrn').forEach(s=>s.classList.remove('on'));$(id).classList.add('on');window.scrollTo(0,0);}
 function openSettings(){
-  const L={sdk:'我的 Claude 账号（订阅）',codex:'我的 ChatGPT 账号（Codex 订阅）',apikey:'API Key · '+(localStorage.getItem('siry_apitype')||'openrouter')};
+  const L={sdk:'我的 Claude 账号（订阅）',codex:'我的 ChatGPT 账号（Codex 订阅）',free:'先试试 · 免注册（DeepSeek Flash）',apikey:'API Key · '+(localStorage.getItem('siry_apitype')||'openrouter')};
   const p=localStorage.getItem('siry_provider')||($('provider')&&$('provider').value)||PROVIDER;
   const cp=$('curProvider');if(cp)cp.textContent=L[p]||'—';
   const box=$('agencyBox'),note=$('agencyWebNote');
@@ -991,7 +1000,7 @@ function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'
 function fig(sz){const c='#ffd9a0',g='#fff0d4';
   return '<svg viewBox="0 0 64 84" width="'+sz+'" height="'+(sz*1.31)+'" aria-hidden="true" style="filter:drop-shadow(0 0 5px '+c+'88)"><ellipse cx="32" cy="78" rx="16" ry="3" fill="rgba(0,0,0,.2)"/><path d="M32 26 L46 70 Q32 74 18 70 Z" fill="'+c+'"/><path d="M32 26 L25 70 Q21.5 71 18 70 Z" fill="rgba(255,255,255,.2)"/><circle cx="32" cy="18" r="8.5" fill="'+c+'"/><circle cx="32" cy="7.3" r="2.3" fill="'+g+'"/></svg>';}
 
-$('provider').value=(PROVIDER==='sdk'?'sdk':'apikey');$('apitype').value=APITYPE;$('apikey').value=localStorage.getItem('siry_apikey')||'';$('apimodel').value=localStorage.getItem('siry_apimodel')||'';$('effort').value=EFFORT;
+$('provider').value=(['sdk','codex','free','apikey'].includes(PROVIDER)?PROVIDER:'apikey');$('apitype').value=APITYPE;$('apikey').value=localStorage.getItem('siry_apikey')||'';$('apimodel').value=localStorage.getItem('siry_apimodel')||'';$('effort').value=EFFORT;
 function apiModelHint(t){const ph={openrouter:'如 anthropic/claude-sonnet-4.6 · openai/o3',openai:'如 gpt-5 · o3',anthropic:'如 claude-sonnet-4-6 · claude-opus-4-8',custom:'你的模型名'};if($('apimodel'))$('apimodel').placeholder=ph[t]||'模型名';}
 
 // —— 模型清单：按类型现拉各家 /models，让人「选」而不是背模型 ID ——
@@ -1053,10 +1062,10 @@ async function loadModels(){
 function syncEndpoint(){const t=$('apitype').value;const stored=localStorage.getItem('siry_endpoint')||'';$('apiendpoint').value=stored||EP_DEFAULT[t]||'';apiModelHint(t);loadModels();}
 function onApiType(){const t=$('apitype').value;$('apiendpoint').value=EP_DEFAULT[t]||'';apiModelHint(t);setModelManual(false);loadModels();}
 syncEndpoint();
-function toggleProvider(){const p=$('provider').value;$('apiBox').style.display=p==='apikey'?'block':'none';$('sdkBox').style.display=p==='sdk'?'block':'none';$('codexBox').style.display=p==='codex'?'block':'none';if(p==='sdk')checkSdk();if(p==='apikey')syncEndpoint();if(p==='codex')checkCodex();}
+function toggleProvider(){const p=$('provider').value;$('apiBox').style.display=p==='apikey'?'block':'none';$('sdkBox').style.display=p==='sdk'?'block':'none';$('codexBox').style.display=p==='codex'?'block':'none';$('freeBox').style.display=p==='free'?'block':'none';if(p==='sdk')checkSdk();if(p==='apikey')syncEndpoint();if(p==='codex')checkCodex();}
 function pickProvider(p){$('provider').value=p;toggleProvider();
   document.querySelectorAll('.ob-card').forEach(c=>c.classList.remove('on'));
-  const map={sdk:'cardSub',codex:'cardCodex',apikey:'cardKey'};if(map[p])$(map[p]).classList.add('on');}
+  const map={free:'cardFree',sdk:'cardSub',codex:'cardCodex',apikey:'cardKey'};if(map[p])$(map[p]).classList.add('on');}
 // Codex 订阅：探测本机 codex CLI（凭证在 ~/.codex/auth.json，GUI 启动也拿得到——
 // 与 claude 的 Keychain 凭证不同，那条在 Finder 启动下会 403，所以只有 Codex 能走 CLI）
 let CODEX_READY=false;
@@ -1073,7 +1082,7 @@ $('apikey').onchange=()=>loadModels();          // 粘完 key 就去拉这把 ke
 $('apiendpoint').onchange=()=>loadModels();     // 换了中转地址，清单也跟着换
 $('codexmodel').value=localStorage.getItem('siry_codexmodel')||'';
 // 网页版：两条「本机账号」路都要桌面版（一个要 sidecar，一个要本机 codex 进程）
-if(!TAURI){['cardSub','cardCodex'].forEach(id=>{const c=$(id);if(c)c.style.display='none';});if(!localStorage.getItem('siry_provider'))$('provider').value='apikey';}
+if(!TAURI){['cardSub','cardCodex'].forEach(id=>{const c=$(id);if(c)c.style.display='none';});const cf=$('cardFree');if(cf)cf.style.display='flex';if(!localStorage.getItem('siry_provider'))$('provider').value='free';}
 pickProvider($('provider').value||'sdk');
 updateFoyer();
 // 被邀请者：凭证已就位，门厅那扇门直接进「关于你」，不再让人面对 endpoint/model 表单。
@@ -1084,7 +1093,7 @@ if(INVITED){
 }
 if(TAURI&&(localStorage.getItem('siry_provider')||'sdk')!=='sdk'){ensureSidecar().then(p=>{if(p)agencyBoot();}).catch(()=>{});}
 
-function loadCreds(){PROVIDER=localStorage.getItem('siry_provider')||'sdk';EFFORT=localStorage.getItem('siry_effort')||'high';if(PROVIDER==='sdk'){MODEL='';return SDK_READY;}if(PROVIDER==='codex'){MODEL=localStorage.getItem('siry_codexmodel')||'';return true;}APITYPE=localStorage.getItem('siry_apitype')||'openrouter';ENDPOINT=localStorage.getItem('siry_endpoint')||EP_DEFAULT[APITYPE]||'';KEY=localStorage.getItem('siry_apikey')||'';MODEL=localStorage.getItem('siry_apimodel')||'';return !!KEY;}
+function loadCreds(){PROVIDER=localStorage.getItem('siry_provider')||'sdk';EFFORT=localStorage.getItem('siry_effort')||'high';if(PROVIDER==='sdk'){MODEL='';return SDK_READY;}if(PROVIDER==='codex'){MODEL=localStorage.getItem('siry_codexmodel')||'';return true;}if(PROVIDER==='free'){MODEL='deepseek-v4-flash';return true;}APITYPE=localStorage.getItem('siry_apitype')||'openrouter';ENDPOINT=localStorage.getItem('siry_endpoint')||EP_DEFAULT[APITYPE]||'';KEY=localStorage.getItem('siry_apikey')||'';MODEL=localStorage.getItem('siry_apimodel')||'';return !!KEY;}
 function importKernelText(tx){const body=(tx||'').replace(/^\s*SIRY 显影 · 会话与内核\s*/,'').trim();if(!body){toast('这个文件是空的（只有标题）——它是在还没聊时导出的。换一个有内容的，或先聊一场。');return;}IMPORTED_TX=body;done=true;rtLoaded=false;updateFoyer();if(loadCreds()){show('home');}else{AFTER='home';show('setup');}if(TAURI)ensureSidecar().then(p=>{if(p)return agPost('/agency/compile',{kernel:IMPORTED_TX}).then(()=>agencyBoot());}).catch(()=>{});}
 $('impf').onchange=ev=>{const f=ev.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>importKernelText(rd.result||'');rd.readAsText(f);};
 $('impLabel').onclick=async()=>{
@@ -1108,6 +1117,20 @@ $('enter').onclick=async()=>{
     if(AFTER==='home'){AFTER='chat';show('home');return;}
     renderChips();show('about');return;
   }
+  if(PROVIDER==='free'){
+    const e=$('enter');e.disabled=true;e.textContent='正在开门…';
+    try{await freeTicket();}
+    catch(err){
+      e.disabled=false;e.textContent='推开这扇门 →';
+      if(err&&err.code===429)toast(err.message);
+      else{const st=$('freeStat');if(st)st.textContent=String((err&&err.message)||err);}
+      return;
+    }
+    e.disabled=false;e.textContent='推开这扇门 →';
+    localStorage.setItem('siry_provider','free');EFFORT=$('effort').value;localStorage.setItem('siry_effort',EFFORT);
+    if(AFTER==='home'){AFTER='chat';show('home');return;}
+    renderChips();show('about');return;
+  }
   // API Key（openrouter / openai / anthropic / custom 统一一组）
   APITYPE=$('apitype').value;ENDPOINT=$('apiendpoint').value.trim().replace(/\/+$/,'');KEY=$('apikey').value.trim();MODEL=modelValue();
   if(!ENDPOINT){toast('接口地址不能为空（选类型会自动填好）。');$('apiendpoint').focus();return;}
@@ -1123,6 +1146,73 @@ $('aboutSkip').onclick=()=>{ABOUT_HINT='';startSession();};
 $('aboutGo').onclick=()=>{ABOUT_HINT=buildAboutHint();startSession();};
 function startSession(){SDK_SESSION=null;CODEX_THREAD=null;const opener='（我推开门，在显影室里坐下了。请开始。）'+(ABOUT_HINT?('\n'+ABOUT_HINT):'');MSGS=[{role:'user',content:opener}];$('log').innerHTML='';show('chat');$('chat').classList.add('on');turn();}
 
+// ---- 免注册体验（F4）----
+// 双证：Turnstile 换 24h 通行证（localStorage），每场领当日场票（内存，跟场走）。
+// 闸机负责把下面 OpenRouter 形状的 body 翻译成 DeepSeek 形状——前端保持同构，别在这里改形状。
+const GATE='https://gate.siry.ai';
+let FREE_TICKET='';
+function freePass(){try{const p=JSON.parse(localStorage.getItem('siry_free_pass')||'null');return p&&p.exp>Date.now()+60000?p.pass:null;}catch(e){return null;}}
+// #tsWidget 只在 #setup 显示时有版面（.scrn 的 display:none 规则）；聊天中途的静默重办发生在 #chat 显示、#setup 隐藏时，
+// 这时候得挂一个屏幕外但仍在渲染树里的容器——Turnstile 在 display:none 的挂点上不出交互控件。
+function tsHost(){
+  const setup=$('setup');
+  if(setup&&setup.classList.contains('on'))return $('tsWidget');
+  let h=document.getElementById('tsWidgetOff');
+  if(!h){h=document.createElement('div');h.id='tsWidgetOff';h.style.cssText='position:fixed;left:-9999px;top:0';document.body.appendChild(h);}
+  return h;
+}
+async function tsToken(){
+  const cfg=await fetch(GATE+'/config').then(r=>r.json()).catch(()=>null);
+  if(!cfg||!cfg.siteKey)throw new Error('体验通道暂时够不着——换「用 API Key」那条路，或稍后再试');
+  if(!window.turnstile){
+    await new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';s.onload=res;s.onerror=()=>rej(new Error('体验通道暂时够不着——换「用 API Key」那条路，或稍后再试'));document.head.appendChild(s);});
+  }
+  const host=tsHost();
+  try{turnstile.remove();}catch(e){}   // 清掉上一次失败/未完成留下的残件——不清 render() 会在同一挂点上静默 no-op，重试变 60s 死等
+  host.innerHTML='';
+  return await new Promise((res,rej)=>{
+    const to=setTimeout(()=>rej(new Error('人机确认超时——刷新再试')),60000);
+    turnstile.render(host,{sitekey:cfg.siteKey,callback:t=>{clearTimeout(to);res(t);},'error-callback':()=>{clearTimeout(to);rej(new Error('人机确认没过——刷新再试'));}});
+  });
+}
+async function ensureFreePass(){
+  const cached=freePass();if(cached)return cached;
+  const st=$('freeStat');if(st)st.textContent='正在做人机确认…';
+  const token=await tsToken();
+  const r=await fetch(GATE+'/session',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({turnstileToken:token})}).then(x=>x.json()).catch(()=>null);
+  if(!r||!r.pass)throw new Error((r&&r.error)||'体验通道没开——稍后再试');
+  localStorage.setItem('siry_free_pass',JSON.stringify(r));
+  try{turnstile.remove();}catch(e){}
+  tsHost().innerHTML='';
+  if(st)st.textContent='通道已开 ✓';
+  return r.pass;
+}
+async function freeTicket(){
+  const pass=await ensureFreePass();
+  const r=await fetch(GATE+'/session-start',{method:'POST',headers:{'x-siry-pass':pass}});
+  const d=await r.json().catch(()=>({}));
+  if(r.status===429)throw Object.assign(new Error(d.error||'今天的三场都照过了——明天 0 点再来。'),{code:429});
+  if(!d.ticket)throw new Error(d.error||'开场没成——稍后再试');
+  FREE_TICKET=d.ticket;
+  return d.ticket;
+}
+async function callFree(system,messages){
+  if(!freePass()||!FREE_TICKET)await freeTicket();  // 直达路径（导入后先看群星等）自动补证；当日场次不够会在此如实抛 429 文案
+  const eff=(EFFORT==='max'||EFFORT==='xhigh')?'high':EFFORT;
+  const body=JSON.stringify({model:'deepseek-v4-flash',max_tokens:8000,reasoning:{effort:eff},messages:[{role:'system',content:system},...messages]});
+  const send=()=>fetch(GATE+'/v1/chat/completions',{method:'POST',headers:{'content-type':'application/json','x-siry-pass':freePass()||'','x-siry-ticket':FREE_TICKET},body});
+  let r=await send();
+  if(r.status===401){ // 证件过期：静默重办一次（当日还有场次时无感恢复）
+    localStorage.removeItem('siry_free_pass');FREE_TICKET='';
+    await freeTicket();
+    r=await send();
+  }
+  const d=await r.json().catch(()=>({error:'闸机没应声——稍后再试'}));
+  if(r.status===429)throw Object.assign(new Error(d.error||'今天的体验调用到顶了——带自己的钥匙可以不限。'),{code:429});
+  if(d.error)throw new Error((d.error&&d.error.message)||d.error||'API error');
+  if(!d.choices||!d.choices[0])throw new Error('空回复——稍后再试');
+  return (d.choices[0].message.content||'').trim();
+}
 let ORM=null;
 async function orReason(id){try{if(!ORM){const r=await fetch('https://openrouter.ai/api/v1/models');const d=await r.json();ORM=(d&&d.data)||[];}const m=ORM.find(x=>x.id===id);if(!m)return null;return (m.supported_parameters||[]).some(p=>p==='reasoning'||p==='include_reasoning');}catch(e){return null;}}
 // 统一共享弹窗（#consent）：每次打开都重设标题/正文/按钮文案与两个 handler，
@@ -1143,7 +1233,7 @@ $('fin').onclick=()=>{done=true;updateFoyer();show('home');};
 $('exp').onclick=async()=>{const t=MSGS.slice(1).map(m=>(m.role==='user'?'我：':'美玲：')+m.content).join('\n\n');if(!t.trim()){toast('还没有可导出的对话——先和美玲聊几句吧');return;}const content='SIRY 显影 · 会话与内核\n\n'+t;
   const ts=new Date().toISOString().slice(0,19).replace(/[:T]/g,'').replace(/-/g,'');const name='siry-kernel-'+ts+'.txt';
   if(TAURI){try{const p=await inv('export_text',{name,content});inv('reveal_in_finder',{path:p}).catch(()=>{});toast('内核已存好 · 已在访达中为你打开');}catch(e){toast('导出没成：'+e);}}
-  else{const b=new Blob([content],{type:'text/plain;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;a.click();}};
+  else{const b=new Blob([content],{type:'text/plain;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;a.click();if(PROVIDER==='free')toast('内核带走了 ✓ 想要更深的我、以及只属于你俩的直连——带一把自己的钥匙来（入口「用 API Key」）。',6000);}};
 
 async function sendMsg(){if(busy)return;const t=$('in').value.trim();if(!t)return;$('in').value='';MSGS.push({role:'user',content:t});render();await turn();}
 function appendRetryBubble(){
@@ -1155,9 +1245,9 @@ function appendRetryBubble(){
   wrap.querySelector('.bub').appendChild(btn);
   log.appendChild(wrap);log.scrollTop=log.scrollHeight;
 }
-async function turn(){busy=true;$('send').disabled=true;if(PROVIDER!=='sdk')showTyping(true);let sdkFailed=false;try{const txt=await callLLM(SYS,MSGS);if(PROVIDER!=='sdk'){const live=liveBubble();await SiryStream.typewrite(txt,live.onText);live.done();}MSGS.push({role:'assistant',content:txt});}catch(e){if(PROVIDER==='sdk'){sdkFailed=true;}else{let m=(e&&e.message)||(typeof e==='string'?e:'')||'未知错误';let hint='。检查 key / 接口地址 / 模型 ID 再继续？';if(/401|403|invalid|unauthor|api.?key/i.test(String(m)))hint='。多半是 key 或接口地址不对——去设置里核对一下，或换一种类型。';MSGS.push({role:'assistant',content:'（出错了：'+m+hint+'）'});}}showTyping(false);busy=false;$('send').disabled=false;render();if(sdkFailed)appendRetryBubble();$('in').focus();}
+async function turn(){busy=true;$('send').disabled=true;if(PROVIDER!=='sdk')showTyping(true);let sdkFailed=false;try{const txt=await callLLM(SYS,MSGS);if(PROVIDER!=='sdk'){const live=liveBubble();await SiryStream.typewrite(txt,live.onText);live.done();}MSGS.push({role:'assistant',content:txt});}catch(e){if(PROVIDER==='sdk'){sdkFailed=true;}else{let m=(e&&e.message)||(typeof e==='string'?e:'')||'未知错误';let hint='。检查 key / 接口地址 / 模型 ID 再继续？';if(/401|403|invalid|unauthor|api.?key/i.test(String(m)))hint='。多半是 key 或接口地址不对——去设置里核对一下，或换一种类型。';if(e&&e.code===429)hint='';MSGS.push({role:'assistant',content:'（出错了：'+m+hint+'）'});}}showTyping(false);busy=false;$('send').disabled=false;render();if(sdkFailed)appendRetryBubble();$('in').focus();}
 
-async function callLLM(system,messages){if(PROVIDER==='sdk')return callSdk(system,messages);if(PROVIDER==='codex')return callCodex(system,messages);return callApiKey(system,messages);}
+async function callLLM(system,messages){if(PROVIDER==='sdk')return callSdk(system,messages);if(PROVIDER==='codex')return callCodex(system,messages);if(PROVIDER==='free')return callFree(system,messages);return callApiKey(system,messages);}
 // Codex：首轮把人格塞进 prompt 开新会话，之后 resume 只发新的一句（省 token、保上下文）。
 // 与 callSdk 同构：主对话(SYS)才续会话；群星等一次性调用绝不复用美玲的 thread。
 async function callCodex(system,messages){

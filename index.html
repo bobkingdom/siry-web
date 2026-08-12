@@ -1000,7 +1000,9 @@ function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'
 function fig(sz){const c='#ffd9a0',g='#fff0d4';
   return '<svg viewBox="0 0 64 84" width="'+sz+'" height="'+(sz*1.31)+'" aria-hidden="true" style="filter:drop-shadow(0 0 5px '+c+'88)"><ellipse cx="32" cy="78" rx="16" ry="3" fill="rgba(0,0,0,.2)"/><path d="M32 26 L46 70 Q32 74 18 70 Z" fill="'+c+'"/><path d="M32 26 L25 70 Q21.5 71 18 70 Z" fill="rgba(255,255,255,.2)"/><circle cx="32" cy="18" r="8.5" fill="'+c+'"/><circle cx="32" cy="7.3" r="2.3" fill="'+g+'"/></svg>';}
 
-$('provider').value=(['sdk','codex','free','apikey'].includes(PROVIDER)?PROVIDER:'apikey');$('apitype').value=APITYPE;$('apikey').value=localStorage.getItem('siry_apikey')||'';$('apimodel').value=localStorage.getItem('siry_apimodel')||'';$('effort').value=EFFORT;
+// 预选：桌面按存储原样（sdk/codex/apikey 都是有效卡）；web 只有 free/apikey 两张卡，
+// 桌面档(sdk/codex)与未知一律回落到 free —— 默认点亮「先试试·免注册」那张。
+$('provider').value=(TAURI?(['sdk','codex','free','apikey'].includes(PROVIDER)?PROVIDER:'apikey'):(['free','apikey'].includes(PROVIDER)?PROVIDER:'free'));$('apitype').value=APITYPE;$('apikey').value=localStorage.getItem('siry_apikey')||'';$('apimodel').value=localStorage.getItem('siry_apimodel')||'';$('effort').value=EFFORT;
 function apiModelHint(t){const ph={openrouter:'如 anthropic/claude-sonnet-4.6 · openai/o3',openai:'如 gpt-5 · o3',anthropic:'如 claude-sonnet-4-6 · claude-opus-4-8',custom:'你的模型名'};if($('apimodel'))$('apimodel').placeholder=ph[t]||'模型名';}
 
 // —— 模型清单：按类型现拉各家 /models，让人「选」而不是背模型 ID ——

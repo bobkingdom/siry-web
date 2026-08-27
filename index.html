@@ -42,6 +42,9 @@ body{font-family:var(--sans);font-weight:300;color:var(--ink);-webkit-font-smoot
 .doorbtn:hover svg{filter:drop-shadow(0 0 44px var(--glow));transform:translateY(-3px)}
 .meta{font-size:12.5px;color:var(--ink3);margin-top:14px}
 .foyer{margin:11vh auto 12vh;text-align:center;border-top:0.5px solid var(--line);padding-top:9vh;max-width:520px}
+.doorbtn.unread svg{animation:doorbreath 6s ease-in-out infinite}
+@keyframes doorbreath{0%,100%{filter:drop-shadow(0 0 22px var(--glow))}50%{filter:drop-shadow(0 0 46px var(--glow))}}
+@media (prefers-reduced-motion:reduce){.doorbtn.unread svg{animation:none;filter:drop-shadow(0 0 40px var(--glow))}}
 .foyer.locked .doorbtn{cursor:default;opacity:.42}
 .foyer.locked .doorbtn:hover svg{filter:drop-shadow(0 0 0 transparent);transform:none}
 .foyer .hd{font-family:var(--serif);font-size:14.5px;color:var(--ink3);line-height:1.9}
@@ -1084,7 +1087,12 @@ $('apikey').onchange=()=>loadModels();          // 粘完 key 就去拉这把 ke
 $('apiendpoint').onchange=()=>loadModels();     // 换了中转地址，清单也跟着换
 $('codexmodel').value=localStorage.getItem('siry_codexmodel')||'';
 // 网页版：两条「本机账号」路都要桌面版（一个要 sidecar，一个要本机 codex 进程）
-if(!TAURI){['cardSub','cardCodex'].forEach(id=>{const c=$(id);if(c)c.style.display='none';});const cf=$('cardFree');if(cf)cf.style.display='flex';if(!localStorage.getItem('siry_provider'))$('provider').value='free';}
+// 免注册这条路桌面版同样给：朋友装完就能用，不必先去弄一把 API key。
+// （callFree 全在 webview 里 fetch 闸机，不经 sidecar，所以连运行时都不需要。）
+{const cf=$('cardFree');if(cf)cf.style.display='flex';}
+// 两条「本机账号」路要桌面版（一个要 sidecar，一个要本机 codex 进程）：网页版藏掉，
+// 并把没选过接法的新访客默认落在免注册那张。
+if(!TAURI){['cardSub','cardCodex'].forEach(id=>{const c=$(id);if(c)c.style.display='none';});if(!localStorage.getItem('siry_provider'))$('provider').value='free';}
 pickProvider($('provider').value||'sdk');
 updateFoyer();
 // 被邀请者：凭证已就位，门厅那扇门直接进「关于你」，不再让人面对 endpoint/model 表单。
@@ -1423,15 +1431,44 @@ async function agencyBoot(){ // sidecar 就绪/内核变更时刷新各扇门：
     }
     fetch(agBase()+'/agency/soulmap'+agQ()).then(r=>r.json()).then(m=>{if(m&&m.hasMap&&m.nodes.length)$('mapDoor').style.display='inline-flex';}).catch(()=>{});
     if(stFinal.pendingDelta)showDeltaCard();
+    maybeAutoDaily(); // 冲洗好了就顺势推进门厅里的人（守卫在函数里）
   }catch(e){/* sidecar 未起或无 pack：静默 */}
 }
 
 if(TAURI&&window.__TAURI__.event){window.__TAURI__.event.listen('siry-daily-link',()=>{openDaily();});}
 
+// 每日通知点不动是 macOS 的硬约束：osascript 发的通知一律归「脚本编辑器」，
+// 而 SIRY 想自己发通知需要 Developer ID 签名+公证（NSUserNotification 已从 macOS 26 移除，
+// UNUserNotificationCenter 对 ad-hoc 签名的 app 直接拒绝授权——两条都实测过）。
+// 所以把「打开就落到底片页」这半兑现在这里：人在门厅、今天的底片还没看过，就直接推进去。
+// 只认门厅（不打断聊天/设置），且看过即记账，一天只推一次。
+const NOTIFY_FRESH_MS=30*60*1000; // 「刚收到通知」的窗口：半小时内算你是循着通知来的
+async function maybeAutoDaily(){
+  if(!TAURI||!SDK_PORT)return;
+  if(!$('home')||!$('home').classList.contains('on'))return;
+  try{
+    const st=await fetch(agBase()+'/agency/status'+agQ()).then(r=>r.json());
+    if(!st.reportToday)return;
+    if(localStorage.getItem('siry_daily_seen')===st.today){markDailyUnread(false);return;}
+    // 循着通知来的（通知发出半小时内）→ 直推底片；其余时候只把门点亮，你想看再推。
+    if(st.notifiedAt&&Date.now()-st.notifiedAt<NOTIFY_FRESH_MS)openDaily();
+    else markDailyUnread(true);
+  }catch(e){/* sidecar 未起：静默 */}
+}
+// 点灯 ≠ 催：门慢慢呼吸 + 一句陈述事实的话；不想看它就一直在那亮着。
+function markDailyUnread(on){
+  const d=$('dailyDoor');if(!d)return;
+  d.classList.toggle('unread',!!on);
+  if($('dailyLbl'))$('dailyLbl').textContent=on?'今日显影 · 今天的底片冲好了':'今日显影 · 已冲洗好';
+}
+if(TAURI)window.addEventListener('focus',maybeAutoDaily);
+
 async function openDaily(){
   const r=await fetch(agBase()+'/agency/report/today'+agQ()).then(x=>x.json());
   if(r.error){$('dailyLbl').textContent='今日暗房无光（点击重试）';agPost('/agency/run',{});return;}
   AG_ITEMS=r.items;AG_HTML=r.htmlPath;$('agDate').textContent=r.date;
+  localStorage.setItem('siry_daily_seen',r.date); // 看过就记账——自动推进只发生一次，不打扰第二次
+  markDailyUnread(false);                          // 顺手熄灯：回门厅时门不再呼吸
   const box=$('agItems');box.textContent='';
   if(r.items&&r.items.length){const nhd=document.createElement('div');nhd.className='scard-hint';nhd.style.cssText='margin:2px 2px 16px;line-height:1.85;font-size:12.5px';nhd.innerHTML='下面几条是<b style="color:var(--ink2)">按你的根挑的</b>。点标题看原文；读到对味点「就是我」，不对味「不是我」，没兴趣「划走」——每次轻轻一点都在帮美玲更懂你，<b style="color:var(--ink2)">只在本机记，不打分、不催</b>。';box.appendChild(nhd);}
   for(const it of r.items){

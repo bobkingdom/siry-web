@@ -803,7 +803,7 @@ let APITYPE=localStorage.getItem('siry_apitype')||'openrouter';
 let ENDPOINT=localStorage.getItem('siry_endpoint')||'';
 const EP_DEFAULT={openrouter:'https://openrouter.ai/api/v1',openai:'https://api.openai.com/v1',anthropic:'https://api.anthropic.com',custom:''};
 const TAURI = !!(window.__TAURI__ && window.__TAURI__.core);
-if(!TAURI)$('desktopDownload').style.display='block';
+if(!TAURI)document.getElementById('desktopDownload').style.display='block';
 const inv=TAURI?window.__TAURI__.core.invoke:async()=>{throw new Error('需要 SIRY 桌面端');};
 let SDK_PORT=null, SDK_SESSION=null, SDK_READY=false;
 let SDK_TOKEN='';  // 本机一次性令牌：sidecar 只认带它的请求，挡掉浏览器里其它页面的端口扫描

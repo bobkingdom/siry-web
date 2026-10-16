@@ -1,0 +1,36 @@
+name: Publish desktop installer
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        required: true
+        type: string
+      sha256:
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Download and verify CI installer
+        env:
+          SOURCE_URL: ${{ secrets.SIRY_DESKTOP_SOURCE_URL }}
+          EXPECTED_SHA256: ${{ inputs.sha256 }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          [[ "$EXPECTED_SHA256" =~ ^[0-9a-f]{64}$ ]]
+          test -n "$SOURCE_URL"
+          curl -fsSL --connect-timeout 15 --max-time 180 --retry 2 "$SOURCE_URL" -o SIRY-macOS-AppleSilicon.dmg
+          printf '%s  SIRY-macOS-AppleSilicon.dmg\n' "$EXPECTED_SHA256" | sha256sum --check
+      - name: Upload to release draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: gh release upload "$RELEASE_TAG" SIRY-macOS-AppleSilicon.dmg --repo "$GITHUB_REPOSITORY" --clobber

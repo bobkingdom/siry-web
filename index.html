@@ -231,6 +231,11 @@ b{font-weight:500}
     </button>
     <div class="meta">约 20 分钟 · 只有你和美玲 · 随时可停</div>
     <div class="meta" id="inviteNote" style="display:none">这是一张邀请卡——胶卷钱朋友已经替你付了，直接推门就好。<br>（对话仍是你和美玲直连服务商；对方能看到用了多少额度，看不到你聊了什么。）</div>
+    <div class="meta" id="desktopDownload" style="display:none;line-height:1.8">
+      <a href="https://github.com/bobkingdom/siry-web/releases/latest/download/SIRY-macOS-AppleSilicon.dmg" style="color:var(--door)">下载 Mac 桌面版 · Apple Silicon</a><br>
+      拖入「应用程序」安装。首次打开若被拦截：<br>
+      系统设置 → 隐私与安全性 →「仍要打开」。
+    </div>
   </div>
 
   <div class="foyer locked" id="foyer">
@@ -282,7 +287,7 @@ b{font-weight:500}
     <div><div class="ob-t">用 API Key</div><div class="ob-d">OpenRouter / OpenAI / Anthropic / 自定义中转 —— 有 key 就能用。</div></div>
   </button>
   <div id="freeBox" style="display:none">
-    <div id="freeStat" style="font-size:12.5px;color:var(--ink3);margin:10px 0 4px;line-height:1.7">直接推门就好——第一次会做个几乎无感的人机确认。</div>
+    <div id="freeStat" style="font-size:12.5px;color:var(--ink3);margin:10px 0 4px;line-height:1.7">直接推门就好——第一次要点一下 Cloudflare 的「我是真人」。</div>
     <div id="tsWidget" style="display:flex;justify-content:center"></div>
   </div>
   <div id="sdkBox">
@@ -358,7 +363,7 @@ b{font-weight:500}
       <div class="note">这些记录从不离开这台电脑。<button type="button" id="agwipe" class="linkbtn">删掉学习记录</button> · <button type="button" id="agwipeAll" class="linkbtn">连道场一起清空（灵魂地图 · 舍利子 · 碰撞史）</button></div>
     </div>
 
-    <div class="set-sec">
+    <div class="set-sec" id="daemonSettings" style="display:none">
       <div class="set-h">每天定点，自己在后台跑</div>
       <div class="set-d">不用一直开着 app，到点它自己冲洗一次日报。</div>
       <div class="set-row">
@@ -798,6 +803,7 @@ let APITYPE=localStorage.getItem('siry_apitype')||'openrouter';
 let ENDPOINT=localStorage.getItem('siry_endpoint')||'';
 const EP_DEFAULT={openrouter:'https://openrouter.ai/api/v1',openai:'https://api.openai.com/v1',anthropic:'https://api.anthropic.com',custom:''};
 const TAURI = !!(window.__TAURI__ && window.__TAURI__.core);
+if(!TAURI)$('desktopDownload').style.display='block';
 const inv=TAURI?window.__TAURI__.core.invoke:async()=>{throw new Error('需要 SIRY 桌面端');};
 let SDK_PORT=null, SDK_SESSION=null, SDK_READY=false;
 let SDK_TOKEN='';  // 本机一次性令牌：sidecar 只认带它的请求，挡掉浏览器里其它页面的端口扫描
@@ -1171,7 +1177,29 @@ function tsHost(){
   if(!h){h=document.createElement('div');h.id='tsWidgetOff';h.style.cssText='position:fixed;left:-9999px;top:0';document.body.appendChild(h);}
   return h;
 }
+// 桌面版：Turnstile 不认 tauri://localhost 这种非 https 来源（组件只会报「无法连接到网站」），
+// 所以把人机验证挪进一个 https iframe——闸机的 /verify 页，其来源是 https://gate.siry.ai，
+// 验完 postMessage 把 token 传回来。只认闸机来的消息，token 仍要回 /session 才换通行证。
+function tsTokenViaFrame(){
+  const host=tsHost();host.innerHTML='';
+  const f=document.createElement('iframe');
+  f.src=GATE+'/verify?t='+Date.now();
+  f.setAttribute('scrolling','no');
+  f.style.cssText='width:320px;height:80px;border:0;background:transparent;color-scheme:light';
+  host.appendChild(f);
+  return new Promise((res,rej)=>{
+    const fin=(fn,v)=>{clearTimeout(to);window.removeEventListener('message',onMsg);host.innerHTML='';fn(v);};
+    const onMsg=e=>{
+      if(e.origin!==GATE||!e.data||!e.data.siry)return;      // 只认闸机自己发来的
+      if(e.data.siry==='ts-token'&&e.data.token)fin(res,e.data.token);
+      else if(e.data.siry==='ts-error')fin(rej,new Error('人机确认没过——刷新再试'));
+    };
+    const to=setTimeout(()=>fin(rej,new Error('人机确认超时——刷新再试')),60000);
+    window.addEventListener('message',onMsg);
+  });
+}
 async function tsToken(){
+  if(TAURI)return tsTokenViaFrame();
   const cfg=await fetch(GATE+'/config').then(r=>r.json()).catch(()=>null);
   if(!cfg||!cfg.siteKey)throw new Error('体验通道暂时够不着——换「用 API Key」那条路，或稍后再试');
   if(!window.turnstile){
@@ -1364,7 +1392,8 @@ $('agwipeAll').onclick=async()=>{await agPost('/agency/wipe-signals',{scope:'all
 
 const DV_PRIVACY={wecom:'内容将经过：腾讯（企业微信）服务器。',feishu:'内容将经过：字节跳动（飞书）服务器。',serverchan:'内容将经过：Server酱（方糖）第三方服务器，再经微信公众号进你的个人微信。',bark:'内容将经过：Bark 服务器与 Apple 推送。',custom:'内容将发送到你自己填的地址——它经过谁，取决于你填的是什么。'};
 for(let h=0;h<24;h++){const o=document.createElement('option');o.value=h;o.textContent=String(h).padStart(2,'0')+':00';$('dmHour').appendChild(o);}
-async function refreshDaemonUI(){try{const st=await inv('daemon_status');$('dmHour').value=st.hour;$('dmToggle').textContent=st.installed?'已开启 · 点击关闭':'已关闭 · 点击开启';$('dmToggle').dataset.on=st.installed?'1':'';}catch(e){}}
+let DAEMON_SUPPORTED=false;
+async function refreshDaemonUI(){try{const st=await inv('daemon_status');DAEMON_SUPPORTED=st.supported===true;$('daemonSettings').style.display=DAEMON_SUPPORTED?'block':'none';$('dmHour').value=st.hour;$('dmToggle').textContent=st.installed?'已开启 · 点击关闭':'已关闭 · 点击开启';$('dmToggle').dataset.on=DAEMON_SUPPORTED&&st.installed?'1':'';}catch(e){}}
 $('dmToggle').onclick=async()=>{try{if($('dmToggle').dataset.on){await inv('daemon_disable');}else{await inv('daemon_enable',{hour:+$('dmHour').value,workspace:AGENCY_WS});}await refreshDaemonUI();}catch(e){toast('后台设置失败：'+e);}};
 $('dmHour').onchange=async()=>{if($('dmToggle').dataset.on){try{await inv('daemon_enable',{hour:+$('dmHour').value,workspace:AGENCY_WS});}catch(e){toast('改时辰失败：'+e);}}};
 $('dmRunNow').onclick=async()=>{try{await inv('daemon_run_now',{workspace:AGENCY_WS});$('dmRunNow').textContent='冲洗中…（好了会有通知）';setTimeout(()=>$('dmRunNow').textContent='现在就跑一次',8000);}catch(e){toast(e);}};
@@ -1376,7 +1405,7 @@ async function loadDeliveryUI(){try{const d=await fetch(agBase()+'/agency/delive
 
 function firstConsentCard(){return new Promise(res=>{openDialog({
   title:'开启日课前，说清楚三件事',
-  bodyHtml:'① 我会记你在日课里的<b>点开 / 细读 / 划走 / 不是我</b>，用来修正对你的理解；<br>② 这些记录<b>只存在你这台机器</b>的文件里，设置里随时可看、可删、可关（删除分两档：只删信号，或连地图一起抹）；<br>③ 我们优化「更懂你」，<b>永不优化「更多点击」</b>。<br>④ 默认开启<b>每日自动显影</b>（每天 8:00 后台冲洗一次；macOS 会提示后台项）——设置里随时可关、可改时辰。',
+  bodyHtml:'① 我会记你在日课里的<b>点开 / 细读 / 划走 / 不是我</b>，用来修正对你的理解；<br>② 这些记录<b>只存在你这台机器</b>的文件里，设置里随时可看、可删、可关（删除分两档：只删信号，或连地图一起抹）；<br>③ 我们优化「更懂你」，<b>永不优化「更多点击」</b>。'+(DAEMON_SUPPORTED?'<br>④ 默认开启<b>每日自动显影</b>（每天 8:00 后台冲洗一次；macOS 会提示后台项）——设置里随时可关、可改时辰。':''),
   goText:'好，开着',backText:'先不学（只推不学）',
   onGo:()=>res('on'),onBack:()=>res('off')});});}
 
@@ -1412,12 +1441,12 @@ async function agencyBoot(){ // sidecar 就绪/内核变更时刷新各扇门：
   const sdkMode=(localStorage.getItem('siry_provider')||($('provider')&&$('provider').value)||PROVIDER)==='sdk';
   try{
     const st=await fetch(agBase()+'/agency/status'+agQ()).then(r=>r.json());
-    refreshDaemonUI();loadDeliveryUI();
+    await refreshDaemonUI();loadDeliveryUI();
     if(!st.hasPack)return; // 未编译过 Soul-pack：门不亮
     if($('mirrorDoor'))$('mirrorDoor').style.display='inline-flex';
     let stFinal=st;
     if(sdkMode){
-      if(!localStorage.getItem('siry_daemon_init')){localStorage.setItem('siry_daemon_init','1');inv('daemon_enable',{hour:8,workspace:AGENCY_WS}).catch(()=>{});}
+      if(DAEMON_SUPPORTED&&!localStorage.getItem('siry_daemon_init')){localStorage.setItem('siry_daemon_init','1');inv('daemon_enable',{hour:8,workspace:AGENCY_WS}).catch(()=>{});}
       if(!localStorage.getItem('siry_consent_shown')){
         const c=await firstConsentCard();
         localStorage.setItem('siry_consent_shown','1');
